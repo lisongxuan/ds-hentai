@@ -1,0 +1,163 @@
+/* ExHentai.org-inspired dark gallery skin for the DSH Web GUI.
+   Scoped visual layer: inactive installs do not alter the stock DSH UI. */
+
+/* ==== Palette map (token layer already sets --dsw-alias-* on body) ==== */
+body[data-dsh-exhentai-active="true"] {
+  --ex-bg-base: #34353b;
+  --ex-bg-panel: #4f535b;
+  --ex-bg-table-head: #40454b;
+  --ex-bg-zebra-odd: #363940;
+  --ex-bg-zebra-even: #3c414b;
+  --ex-bg-input: #34353b;
+  --ex-bg-input-hover: #43464e;
+  --ex-text: #f1f1f1;
+  --ex-text-link: #dddddd;
+  --ex-text-dim: #8f8f8f;
+  --ex-border-input: #8d8d8d;
+  --ex-border-input-hover: #aeaeae;
+  --ex-border-box: #000000;
+  --ex-error: #ff3333;
+  --ex-up: #00e639;
+  --ex-warn: #fb7878;
+  font-family: Arial, Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 12px;
+  color: var(--ex-text);
+}
+
+/* ==== Base form / control chrome ==== */
+body[data-dsh-exhentai-active="true"] input,
+body[data-dsh-exhentai-active="true"] textarea,
+body[data-dsh-exhentai-active="true"] select {
+  border: 2px solid var(--ex-border-input);
+  border-radius: 3px;
+  background: var(--ex-bg-input);
+  color: var(--ex-text);
+  outline: none;
+}
+body[data-dsh-exhentai-active="true"] input:hover,
+body[data-dsh-exhentai-active="true"] textarea:hover,
+body[data-dsh-exhentai-active="true"] select:hover,
+body[data-dsh-exhentai-active="true"] input:focus,
+body[data-dsh-exhentai-active="true"] textarea:focus,
+body[data-dsh-exhentai-active="true"] select:focus {
+  background: var(--ex-bg-input-hover);
+  border-color: var(--ex-border-input-hover);
+}
+body[data-dsh-exhentai-active="true"] input:active,
+body[data-dsh-exhentai-active="true"] textarea:active {
+  background: radial-gradient(#1a1a1a, var(--ex-bg-input-hover));
+  border-color: #c3c3c3;
+}
+body[data-dsh-exhentai-active="true"] ::placeholder {
+  color: var(--ex-text-dim);
+  opacity: 1;
+}
+body[data-dsh-exhentai-active="true"] ::selection {
+  background: var(--ex-border-input);
+  color: #1a1a1a;
+}
+
+/* ==== Scrollbars: narrow gray rails ==== */
+body[data-dsh-exhentai-active="true"]::-webkit-scrollbar { width: 12px; height: 12px; }
+body[data-dsh-exhentai-active="true"]::-webkit-scrollbar-track { background: var(--ex-bg-base); border-left: 1px solid var(--ex-border-box); }
+body[data-dsh-exhentai-active="true"]::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #5a5f66 0%, #4f535b 60%, #45484f 100%);
+  border: 1px solid #6a6f77;
+  border-radius: 3px;
+}
+body[data-dsh-exhentai-active="true"]::-webkit-scrollbar-thumb:hover { background: var(--ex-border-input); }
+body[data-dsh-exhentai-active="true"]::-webkit-scrollbar-corner { background: var(--ex-bg-base); }
+
+/* ==== Conversation bubbles: gray panels ==== */
+body[data-dsh-exhentai-active="true"] [class$="_bubble"] {
+  border: 1px solid #6a6f77;
+  border-radius: 6px;
+  background: var(--ex-bg-panel);
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* ==== Session / project rows: table-like hover + selected ==== */
+body[data-dsh-exhentai-active="true"] [class*="_sessionRow"],
+body[data-dsh-exhentai-active="true"] [class*="_projectRow"] { border-radius: 3px; }
+body[data-dsh-exhentai-active="true"] [class*="_sessionRow"]:hover,
+body[data-dsh-exhentai-active="true"] [class*="_projectRow"]:hover { background: var(--ex-bg-table-head); }
+body[data-dsh-exhentai-active="true"] [class*="_sessionRow"][class*="_selected"],
+body[data-dsh-exhentai-active="true"] [class*="_projectRow"][class*="_selected"] {
+  background: var(--ex-bg-panel);
+  color: var(--ex-text);
+}
+body[data-dsh-exhentai-active="true"] [class*="_sectionLabel"] {
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--ex-text-dim);
+}
+
+/* ==== Primary action button (composer send etc.) ==== */
+body[data-dsh-exhentai-active="true"] [class$="_primary"] {
+  background: linear-gradient(180deg, #5a5f66 0%, #43464e 100%);
+  border: 1px solid var(--ex-border-input);
+  border-radius: 4px;
+  color: var(--ex-text);
+  box-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.14), inset -1px -1px 0 rgba(0, 0, 0, 0.28);
+}
+body[data-dsh-exhentai-active="true"] [class$="_primary"]:hover { filter: brightness(1.08); }
+body[data-dsh-exhentai-active="true"] [class$="_primary"]:active { filter: brightness(0.95); }
+
+/* ==== Conversation header: gray page banner ==== */
+body[data-dsh-exhentai-active="true"] [class$="_header"]:has([class$="_titleRow"]) {
+  background: linear-gradient(180deg, var(--ex-bg-table-head) 0%, var(--ex-bg-base) 100%);
+  border-bottom: 1px solid var(--ex-border-box);
+}
+body[data-dsh-exhentai-active="true"] [class$="_header"]:has([class$="_titleRow"]) [class$="_crumb"],
+body[data-dsh-exhentai-active="true"] [class$="_header"]:has([class$="_titleRow"]) [class$="_crumbSep"],
+body[data-dsh-exhentai-active="true"] [class$="_header"]:has([class$="_titleRow"]) [class$="_crumbCurrent"] { color: var(--ex-text); }
+body[data-dsh-exhentai-active="true"] [class$="_header"]:has([class$="_titleRow"]) [class$="_crumb"]:hover { background: rgba(255, 255, 255, 0.14); }
+
+/* ==== Tooltip: yellow bubble with dark ink ==== */
+body[data-dsh-exhentai-active="true"] [class*="_bubble_"],
+body[data-dsh-exhentai-active="true"] [role="tooltip"] {
+  background: var(--dsw-alias-tooltip-bg) !important;
+  color: var(--dsw-tooltip-ink, #1f1f1f) !important;
+  border: 1px solid #b5a642 !important;
+  border-radius: 4px !important;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ==== Category chips: ExHentai .ct* rainbow accents (best effort) ==== */
+body[data-dsh-exhentai-active="true"][data-dsh-exhentai-chips="on"] :where([class*="_tag"], [class*="_chip"], [class*="_badge"]) {
+  border-radius: 5px;
+  font-weight: 700;
+}
+body[data-dsh-exhentai-active="true"][data-dsh-exhentai-chips="on"] :where([class*="_tag"], [class*="_chip"], [class*="_badge"]):nth-child(4n+1) { background: #9e2720; }
+body[data-dsh-exhentai-active="true"][data-dsh-exhentai-chips="on"] :where([class*="_tag"], [class*="_chip"], [class*="_badge"]):nth-child(4n+2) { background: #db6c24; }
+body[data-dsh-exhentai-active="true"][data-dsh-exhentai-chips="on"] :where([class*="_tag"], [class*="_chip"], [class*="_badge"]):nth-child(4n+3) { background: #6a936d; }
+body[data-dsh-exhentai-active="true"][data-dsh-exhentai-chips="on"] :where([class*="_tag"], [class*="_chip"], [class*="_badge"]):nth-child(4n+4) { background: #325ca2; }
+
+body[data-dsh-exhentai-active="true"][data-dsh-exhentai-chips="off"] :where([class*="_tag"], [class*="_chip"], [class*="_badge"]) {
+  background: var(--ex-bg-panel);
+  border: 1px solid var(--ex-border-input);
+}
+
+/* ==== Layout density: tighten toward a table-driven feel (best effort) ==== */
+body[data-dsh-exhentai-active="true"] [class$="_frame"] { transition: none; }
+
+/* ==== Responsive ==== */
+@media screen and (max-width: 800px) {
+  body[data-dsh-exhentai-active="true"] { font-size: 13px; }
+}
+
+/* ==== Accessibility ==== */
+@media (prefers-reduced-motion: reduce) {
+  body[data-dsh-exhentai-active="true"],
+  body[data-dsh-exhentai-active="true"] * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+@media (forced-colors: active) {
+  body[data-dsh-exhentai-active="true"] [class$="_bubble"],
+  body[data-dsh-exhentai-active="true"] [class$="_primary"],
+  body[data-dsh-exhentai-active="true"] [class$="_header"]:has([class$="_titleRow"]) {
+    box-shadow: none !important;
+  }
+}

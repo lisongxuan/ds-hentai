@@ -1,0 +1,9 @@
+# Self-registration patch for ds-hentai.
+#
+# Declaring `dsh.bundle.patch` in package.json makes `dsh plugin --profile web
+# add ds-hentai` both install the package AND append it to the profile's
+# bundle layer, so this insert activates the client plugin row automatically —
+# recipients never touch their own cordis.patch.yml.
+- insert:
+    - id: ds-hentai
+      name: ds-hentai

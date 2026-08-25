@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420" font-family="Arial, Helvetica, sans-serif" role="img" aria-labelledby="title desc">
+  <title id="title">ds-hentai preview</title>
+  <desc id="desc">A monochrome charcoal web chat layout with 2px gray-bordered controls, a table-like session list, and red/green status accents.</desc>
+  <rect width="720" height="420" fill="#34353b"/>
+  <rect x="14" y="14" width="150" height="392" fill="#3a3d44" stroke="#8d8d8d"/>
+  <rect x="16" y="22" width="146" height="26" fill="#40454b" stroke="#1a1a1a"/>
+  <text x="30" y="39" fill="#f1f1f1" font-size="12" font-weight="700">会话列表</text>
+  <rect x="16" y="56" width="146" height="22" fill="#363940"/>
+  <rect x="16" y="80" width="146" height="22" fill="#3c414b"/>
+  <rect x="16" y="104" width="146" height="22" fill="#4f535b"/>
+  <text x="28" y="71" fill="#ddd" font-size="11">工作区 / 会话</text>
+  <text x="28" y="95" fill="#ddd" font-size="11">会话 A</text>
+  <text x="28" y="119" fill="#f1f1f1" font-size="11" font-weight="700">会话 B</text>
+  <rect x="180" y="14" width="394" height="344" fill="#34353b" stroke="#000"/>
+  <rect x="182" y="16" width="390" height="30" fill="url(#banner)"/>
+  <text x="196" y="36" fill="#f1f1f1" font-size="13" font-weight="700">ExHentai.org 风格会话</text>
+  <rect x="196" y="60" width="280" height="18" fill="#4f535b" stroke="#6a6f77"/>
+  <text x="206" y="73" fill="#e6e6e6" font-size="11">◆ 灰阶语泡 · 灰边卡片</text>
+  <rect x="200" y="92" width="360" height="58" fill="#4f535b" stroke="#6a6f77"/>
+  <rect x="210" y="102" width="340" height="18" fill="#3a3d44" stroke="#8d8d8d"/>
+  <rect x="210" y="124" width="262" height="18" fill="#3a3d44" stroke="#8d8d8d"/>
+  <rect x="200" y="158" width="120" height="20" fill="#db6c24"/>
+  <text x="212" y="172" fill="#fff" font-size="11" font-weight="700">分类橙</text>
+  <rect x="326" y="158" width="96" height="20" fill="#325ca2"/>
+  <text x="338" y="172" fill="#fff" font-size="11" font-weight="700">分类蓝</text>
+  <rect x="428" y="158" width="112" height="20" fill="#6a936d"/>
+  <text x="440" y="172" fill="#fff" font-size="11" font-weight="700">分类绿</text>
+  <text x="200" y="210" fill="#8f8f8f" font-size="10">「发送」按钮（深灰底、浅灰字、灰边）</text>
+  <rect x="200" y="220" width="120" height="30" fill="url(#btn)" stroke="#8d8d8d"/>
+  <text x="222" y="240" fill="#f1f1f1" font-size="12" font-weight="700">发送消息</text>
+  <rect x="200" y="270" width="220" height="34" fill="#34353b" stroke="#8d8d8d"/>
+  <rect x="180" y="362" width="394" height="40" fill="#40454b" stroke="#000"/>
+  <text x="196" y="386" fill="#f1f1f1" font-size="11">本地视觉层已启用 · 双音: 关 · <tspan fill="#00e639">12:30</tspan></text>
+  <rect x="590" y="14" width="116" height="392" fill="#3a3d44" stroke="#8d8d8d"/>
+  <text x="600" y="36" fill="#f1f1f1" font-size="11" font-weight="700">详情</text>
+  <rect x="592" y="46" width="112" height="30" fill="#4f535b" stroke="#8d8d8d"/>
+  <text x="600" y="65" fill="#e6e6e6" font-size="10">模型</text>
+  <rect x="592" y="82" width="112" height="30" fill="#4f535b" stroke="#8d8d8d"/>
+  <text x="600" y="101" fill="#ff3333" font-size="11" font-weight="700">错误示例</text>
+  <rect x="592" y="118" width="112" height="30" fill="#4f535b" stroke="#8d8d8d"/>
+  <text x="600" y="137" fill="#00e639" font-size="11" font-weight="700">成功示例</text>
+  <defs>
+    <linearGradient id="banner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#40454b"/>
+      <stop offset="1" stop-color="#34353b"/>
+    </linearGradient>
+    <linearGradient id="btn" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5a5f66"/>
+      <stop offset="1" stop-color="#43464e"/>
+    </linearGradient>
+  </defs>
+</svg>
