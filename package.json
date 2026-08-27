@@ -1,7 +1,7 @@
 {
   "name": "ds-hentai",
-  "version": "0.1.0",
-  "description": "ExHentai.org-inspired dark gallery skin for the DeepSeek Harness Web GUI: monochrome charcoal chrome, 2px gray borders, compact table-driven layout, red/green status accents, and reversible settings.",
+  "version": "0.4.0",
+  "description": "ExHentai.org-inspired dark gallery skin for the DeepSeek Harness Web GUI: gallery chrome, optional native sidebar, mutually exclusive skin/native composer, per-option [...] panels, and reversible settings.",
   "license": "MIT",
   "author": "ds-hentai contributors",
   "type": "module",
@@ -51,6 +51,7 @@
       "inject": [
         "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-ui-theme",
+        "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-ui-settings",
         "@deepseek-ai/dsh-client-ui-settings-general"
       ]
@@ -61,6 +62,7 @@
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/dsh-client-runtime": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-theme": "^0.1.0-rc.6",
+    "@deepseek-ai/dsh-client-ui-layout": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-settings": "^0.1.0-rc.6",
     "@deepseek-ai/dsh-client-ui-settings-general": "^0.1.0-rc.6"
   }

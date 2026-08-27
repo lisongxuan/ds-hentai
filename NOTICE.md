@@ -8,10 +8,9 @@ ExHentai.org website.
 
 The skin reuses only the *style language* of the reference page — colors,
 border strokes, typography, and layout proportions — not any artwork,
-screenshot, logo, tag, text, or resource of the source site. It is
-functionally a color/token palette applied to the DeepSeek Harness Web UI. All
-original source code in this repository is licensed under the MIT License (see
-[LICENSE](LICENSE)).
+screenshot, logo, tag, text, or resource of the source site. Overlay class
+names (`dsh-ex-*`) and copy are original. All original source code in this
+repository is licensed under the MIT License (see [LICENSE](LICENSE)).
 
 Any nickname, logo, or artwork that a future version ships is original or
 explicitly licensed work, documented in [assets/palettes.md](assets/palettes.md).

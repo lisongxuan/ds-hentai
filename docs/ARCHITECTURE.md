@@ -2,33 +2,28 @@
 
 ## Goal
 
-Add a reversible ExHentai.org-style dark appearance to the DSH Web GUI without
-replacing native controls, editing DSH files, opening a debug port, or
-maintaining a parallel data model.
+Add a reversible ExHentai.org-style dark gallery appearance to the DSH Web
+GUI: token palette plus a structural chrome overlay. The plugin does not edit
+DSH files, open a debug port, or maintain a parallel conversation store.
 
 ## Package shape
 
 ```text
 ds-hentai
 ├─ dsh.bundle → cordis.patch.yml → host no-op loader entry
-└─ dsh.client → lib/client.js → browser ThemeRuntime/CSS/settings effects
+└─ dsh.client → lib/client.js → browser ThemeRuntime / CSS / overlay / settings
 ```
 
 The host half exists only so `dsh plugin --profile web add ...` can compose the
-package as a standard profile bundle. All behavior is browser-local and purely
-visual.
+package as a standard profile bundle. All behavior is browser-local.
 
 ## Runtime flow
-
-One reversible dark theme applied through the registered theme registry, plus
-a scoped decorative stylesheet and one General-settings row.
 
 1. Register `dsh-exhentai` with `ctx.theme.register()` using the `--dsw-*`
    override dictionary (`colorScheme: 'dark'`). The presenter
    (`ui-layout`'s `ThemePresenter`) already applies the snapshot's `active`
    tokens as inline variables on `body` and toggles
-   `body[data-ds-dark-theme]` from `colorScheme`, so a registered theme needs no
-   manual DOM token writes.
+   `body[data-ds-dark-theme]` from `colorScheme`.
 2. Restore the per-browser enabled flag from `localStorage`; first install
    defaults to enabled.
 3. Switch through `ctx.theme.setTheme()` and follow `theme/change` as the single
@@ -37,28 +32,56 @@ a scoped decorative stylesheet and one General-settings row.
    changes.
 4. Install one `<style>` scoped under
    `body[data-dsh-exhentai-active="true"]`; the stylesheet (and no network
-   request) carries every decoration.
-5. Set `body[data-dsh-exhentai-chips="on"|"off"]` to enable or disable the
-   best-effort ExHentai-style category accents.
-6. Register a General-settings item with an independent appearance switch and a
-   category-chips switch. Appearance restores the previous built-in `light`,
-   `dark`, or `system` preference.
-7. Dispose theme registration, the stylesheet, the disposed flag, subscribers,
-   and state markers with the owning Cordis fiber.
+   request) carries token decorations and native-shell layout transforms.
+5. Set `body[data-dsh-exhentai-chips="on"|"off"]` and
+   `body[data-dsh-exhentai-view="index"|"session"]` for chip accents and
+   index-vs-session layout.
+6. Register a General-settings item: appearance, category chips, native
+   sidebar visibility, skin vs native composer, Front Page display mode.
+   Appearance restores the previous built-in `light`, `dark`, or `system`
+   preference.
+7. Register a `shell.overlay` list entry (`ds-hentai-chrome`) that paints the
+   gallery nav, compact session table, search-style composer, and status
+   footer. Session list prefers the slot runtime `useSessions` snapshot and
+   falls back to native `[class*="_sessionRow"]` DOM. Send / attach / settings
+   / new-session call into `ctx.sessions` / `ctx.layout` when present, else
+   click the native control. Overlay registration is try/caught so older
+   baselines without `shell.overlay` still get tokens + CSS.
+8. Dispose theme registration, the stylesheet, the overlay, subscribers, and
+   state markers with the owning Cordis fiber.
 
 ## Native interaction boundary
 
-The plugin does not create replacement chat, model, attachment, send, settings,
-session, or details controls. Selectors only decorate existing shell surfaces;
-the native send button retains DSH's element, handler, disabled state, and
-accessible name. The plugin injects no document-level input listeners.
+The overlay is replacement *chrome*, not a second agent runtime. It does not
+copy prompts or session payloads out of DSH. Selecting a row, Search, File
+Search, Settings, Uploads, Rename / Fork / Archive, model radios, and access
+mode ultimately activate the native session list, composer, file input,
+settings host, session APIs (`rename` / `fork` / `archiveSession`),
+`sessions.models` / `selectModel`, and `/permission`. The native send
+button keeps DSH's element, handler, disabled state, and accessible name; the
+overlay Search control fills the composer and clicks that button (or
+`ctx.sessions.scope(id).conversation.send` when the scoped service exists).
+The plugin injects no document-level key logger; the overlay's own inputs only
+listen on their nodes.
+
+Fictional model / quota / connection / delivery / proxy readouts are local
+presentation. Connection label is a best-effort map of `ctx.connection` when
+that service exists; quota units are a decorative counter, not a billing API.
 
 ## Persistence
 
-Only `ds-hentai:enabled=on|off`, `ds-hentai:chips=on|off`, and
-the previous built-in theme id (`light`, `dark`, or `system`) are stored in
-browser `localStorage`. No prompts, replies, session identifiers, file paths,
-credentials, or usage data are stored or transmitted.
+Browser `localStorage` keys:
+
+- `ds-hentai:enabled=on|off`
+- `ds-hentai:chips=on|off`
+- `ds-hentai:previous-theme` (`light` | `dark` | `system`)
+- `ds-hentai:mode` (`minimal` | `compact` | `extended` | `thumbnail`)
+- `ds-hentai:favs` (JSON array of session ids)
+- `ds-hentai:model` / `ds-hentai:region` / `ds-hentai:cats` (chrome filters)
+- `ds-hentai:native-sidebar=on|off` (session-view native sidebar)
+- `ds-hentai:composer=skin|native` (mutually exclusive composer chrome)
+
+No prompts, replies, credentials, or usage telemetry are stored or transmitted.
 
 ## Build
 
