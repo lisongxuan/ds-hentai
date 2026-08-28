@@ -4,6 +4,8 @@
 
 **ExHentai.org 皮肤** for DeepSeek Harness。深炭底、浅灰文字、灰色边框；会话列表像画廊索引，发送框像搜索栏。
 
+**[在线演示](https://dshentai-demo.arkady14.site)** —— 静态预览（假宿主，不跑 harness）。
+
 ![Front Page](docs/preview.png)
 
 ![对话页](docs/preview-session.png)
@@ -65,7 +67,7 @@ npm run test:e2e     # L3：隔离 DSH_HOME + Playwright，对 0.1.0-rc.6
 npm pack --dry-run # 发布视图关门
 ```
 
-静态演示复用 `src/client.js` 和 `src/skin.css`。`demo/` 只提供假 DSH 宿主、夹具数据和会话气泡。搜索、设置、翻页都在浏览器里完成，不会调用 DeepSeek Harness、Agent 或模型接口。
+静态演示复用 `src/client.js` 和 `src/skin.css`。`demo/` 只提供假 DSH 宿主、夹具数据和会话气泡。搜索、设置、翻页都在浏览器里完成，不会调用 DeepSeek Harness、Agent 或模型接口。在线副本：[dshentai-demo.arkady14.site](https://dshentai-demo.arkady14.site)。
 
 ## 目录
 

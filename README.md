@@ -4,6 +4,8 @@ English | [简体中文](README.zh-CN.md)
 
 **ExHentai.org-inspired UI** for DeepSeek Harness. Charcoal background, light-gray text, gray borders. The session list reads like a gallery index; the composer reads like a search bar.
 
+**[Live demo](https://dshentai-demo.arkady14.site)** — static preview (fake host, no harness).
+
 ![Front Page](docs/preview.png)
 
 ![Session](docs/preview-session.png)
@@ -66,7 +68,7 @@ npm run test:e2e     # L3: isolated DSH_HOME + Playwright against 0.1.0-rc.6
 npm pack --dry-run # release-view gate
 ```
 
-The static demo reuses `src/client.js` and `src/skin.css`. `demo/` is only a fake DSH host, fixtures, and a stand-in conversation pane. Search, settings, and session chrome stay local; nothing calls DeepSeek Harness, an agent, or a model API.
+The static demo reuses `src/client.js` and `src/skin.css`. `demo/` is only a fake DSH host, fixtures, and a stand-in conversation pane. Search, settings, and session chrome stay local; nothing calls DeepSeek Harness, an agent, or a model API. Hosted copy: [dshentai-demo.arkady14.site](https://dshentai-demo.arkady14.site).
 
 
 ## Layout
