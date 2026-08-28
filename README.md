@@ -4,7 +4,9 @@ English | [简体中文](README.zh-CN.md)
 
 **ExHentai.org-inspired UI** for DeepSeek Harness. Charcoal background, light-gray text, gray borders. The session list reads like a gallery index; the composer reads like a search bar.
 
-![Preview](docs/preview.svg)
+![Front Page](docs/preview.png)
+
+![Session](docs/preview-session.png)
 
 ## Install
 
@@ -74,6 +76,7 @@ The static demo reuses `src/client.js` and `src/skin.css`. `demo/` is only a fak
 - `demo/` — static preview host (fixtures + fake `ctx`); not shipped on npm
 - `scripts/build-client.mjs` — wrap `window.__ModuleLoader__.load(...)` into `lib/client.js`
 - `scripts/build-demo.mjs` — embed the plugin bundle in `dist/demo`
+- `scripts/capture-preview.mjs` — screenshot Front Page / session into `docs/preview*.png`
 - `docs/ARCHITECTURE.md` — runtime data flow and boundaries
 - `docs/COMPATIBILITY.md` — baseline, layer stability, recovery
 - `test/compat/catalog.json` — executable probe catalog for L1/L2/L3

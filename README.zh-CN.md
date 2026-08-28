@@ -4,7 +4,9 @@
 
 **ExHentai.org 皮肤** for DeepSeek Harness。深炭底、浅灰文字、灰色边框；会话列表像画廊索引，发送框像搜索栏。
 
-![Preview](docs/preview.svg)
+![Front Page](docs/preview.png)
+
+![对话页](docs/preview-session.png)
 
 ## 安装
 
@@ -72,6 +74,7 @@ npm pack --dry-run # 发布视图关门
 - `demo/` —— 静态演示宿主（夹具 + 假 `ctx`）；不打进 npm 包
 - `scripts/build-client.mjs` —— 组装 `window.__ModuleLoader__.load(...)` 信封到 `lib/client.js`
 - `scripts/build-demo.mjs` —— 把插件 bundle 嵌进 `dist/demo`
+- `scripts/capture-preview.mjs` —— 从本地 demo 截 Front Page / 对话页到 `docs/preview*.png`
 - `docs/ARCHITECTURE.md` —— 运行时数据流与边界
 - `docs/COMPATIBILITY.md` —— 基线、分层稳定性、恢复方式
 - `test/compat/catalog.json` —— L1/L2/L3 可执行探测目录
