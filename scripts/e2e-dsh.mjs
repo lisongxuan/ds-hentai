@@ -7,12 +7,13 @@ import { spawn } from 'node:child_process'
 import { root } from '../test/compat/catalog.mjs'
 
 function parseArgs(argv) {
-  const out = { version: '0.1.0-rc.6', port: 43180, url: '', headed: false }
+  const out = { version: '0.1.0-rc.6', port: 43180, url: '', headed: false, plugin: '' }
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
     if (arg === '--version') out.version = argv[++i]
     else if (arg === '--port') out.port = Number(argv[++i])
     else if (arg === '--url') out.url = argv[++i]
+    else if (arg === '--plugin') out.plugin = argv[++i]
     else if (arg === '--headed') out.headed = true
     else if (arg === '--help') out.help = true
   }
@@ -125,7 +126,7 @@ async function packPlugin(work) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.help) {
-    console.log('Usage: node scripts/e2e-dsh.mjs [--version 0.1.0-rc.6|latest] [--port 43180] [--url http://127.0.0.1:3080] [--headed]')
+    console.log('Usage: node scripts/e2e-dsh.mjs [--version 0.1.0-rc.6|latest] [--plugin ds-hentai@0.5.0] [--port 43180] [--url http://127.0.0.1:3080] [--headed]')
     process.exit(0)
   }
 
@@ -148,9 +149,10 @@ async function main() {
   let child = null
 
   try {
-    const tgz = await packPlugin(work)
+    const spec = args.plugin || await packPlugin(work)
     const dsh = `@deepseek-ai/dsh@${args.version}`
-    const add = await run(bin('npx'), ['-y', dsh, 'plugin', '--profile', 'web', 'add', tgz], {
+    console.error(`e2e: ${dsh} plugin add ${spec}`)
+    const add = await run(bin('npx'), ['-y', dsh, 'plugin', '--profile', 'web', 'add', spec], {
       env: { ...process.env, DSH_HOME: home }
     })
     if (add.code !== 0) {
@@ -161,6 +163,17 @@ async function main() {
         process.exit(0)
       }
       throw new Error(`dsh plugin add failed:\n${add.stderr || add.stdout}`)
+    }
+
+    if (add.stdout) process.stderr.write(add.stdout)
+    if (add.stderr) process.stderr.write(add.stderr)
+    const installed = join(home, 'profiles', 'web', 'node_modules', 'ds-hentai', 'package.json')
+    try {
+      const { readFile } = await import('node:fs/promises')
+      const pkg = JSON.parse(await readFile(installed, 'utf8'))
+      console.error(`e2e: installed ${pkg.name}@${pkg.version} from ${spec}`)
+    } catch (err) {
+      console.error(`e2e: could not read installed plugin at ${installed}: ${err && err.message || err}`)
     }
 
     const url = `http://127.0.0.1:${args.port}`
