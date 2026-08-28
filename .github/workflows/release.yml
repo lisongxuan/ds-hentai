@@ -1,0 +1,157 @@
+# Dual-publish: one git tag → one tarball → npm + GitHub Release.
+#
+# Human steps:
+#   1. Bump package.json version, fill CHANGELOG.md, merge to main.
+#   2. git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z
+#   3. This workflow packs once, publishes that file to npm, then attaches
+#      the same bytes to the GitHub Release (versioned + stable names).
+#
+# First-time npm setup (Trusted Publishing, no NPM_TOKEN):
+#   npmjs.com → package (or unpublished name) → Trusted Publisher
+#     Organization or user: lisongxuan
+#     Repository: ds-hentai
+#     Workflow filename: release.yml
+#     Environment name: (leave empty; this job does not use an environment)
+#     Allowed actions: npm publish
+#   Requires a public repo and npm CLI ≥ 11.5.1 (Node ≥ 22.14).
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Require npm CLI that supports Trusted Publishing
+        run: npm install -g npm@^11.5.1
+
+      - name: Verify tag matches package.json
+        id: meta
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          version="${tag#v}"
+          pkg="$(node -p "require('./package.json').version")"
+          name="$(node -p "require('./package.json').name")"
+          if [ "$version" != "$pkg" ]; then
+            echo "::error::Tag $tag does not match package.json version $pkg"
+            exit 1
+          fi
+          if [[ "$version" == *-* ]]; then
+            prerelease=true
+            npm_tag=next
+          else
+            prerelease=false
+            npm_tag=latest
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+          echo "npm_tag=$npm_tag" >> "$GITHUB_OUTPUT"
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run pack:check
+
+      - name: Pack the publish tarball
+        id: pack
+        run: |
+          set -euo pipefail
+          tarball="$(npm pack | tail -n1)"
+          test -f "$tarball"
+          cp "$tarball" ds-hentai.tgz
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+
+      - name: Publish the same tarball to npm
+        env:
+          NAME: ${{ steps.meta.outputs.name }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          NPM_TAG: ${{ steps.meta.outputs.npm_tag }}
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          set -euo pipefail
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "npm already has ${NAME}@${VERSION}; skipping publish (re-run after a GitHub Release failure)"
+          else
+            npm publish "./${TARBALL}" --access public --tag "$NPM_TAG"
+          fi
+
+      - name: Extract CHANGELOG notes for this version
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          node --input-type=commonjs -e '
+          const { readFileSync, writeFileSync } = require("node:fs");
+          const version = process.env.VERSION;
+          const md = readFileSync("CHANGELOG.md", "utf8");
+          const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const match = md.match(new RegExp("^## " + escaped + "\\r?\\n([\\s\\S]*?)(?=^## |\\s*$)", "m"));
+          const body = (match ? match[1] : "").trim();
+          const repo = process.env.GITHUB_REPOSITORY;
+          const notes = [
+            body || ("ds-hentai " + version),
+            "",
+            "Install (npm, prebuilt, no allowBuilds):",
+            "",
+            "```sh",
+            "npx @deepseek-ai/dsh plugin --profile web add ds-hentai@" + version,
+            "```",
+            "",
+            "Install (GitHub Release tarball):",
+            "",
+            "```sh",
+            "npx @deepseek-ai/dsh plugin --profile web add https://github.com/" + repo + "/releases/download/v" + version + "/ds-hentai.tgz",
+            "```",
+            ""
+          ].join("\n");
+          writeFileSync("release-notes.md", notes);
+          '
+
+      - name: Create GitHub Release with the same tarball
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          PRERELEASE: ${{ steps.meta.outputs.prerelease }}
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: |
+          set -euo pipefail
+          extra=()
+          if [ "$PRERELEASE" = true ]; then
+            extra+=(--prerelease)
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" \
+              "./${TARBALL}#ds-hentai-${VERSION}.tgz" \
+              "./ds-hentai.tgz#ds-hentai.tgz" \
+              --clobber
+          else
+            gh release create "$TAG" \
+              "./${TARBALL}#ds-hentai-${VERSION}.tgz" \
+              "./ds-hentai.tgz#ds-hentai.tgz" \
+              --title "$TAG" \
+              --notes-file release-notes.md \
+              "${extra[@]}"
+          fi

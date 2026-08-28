@@ -10,3 +10,4 @@ playwright-report/
 playwright/.cache/
 dist/
 .vercel/
+.npmrc
