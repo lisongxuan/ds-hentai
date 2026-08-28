@@ -2205,7 +2205,13 @@ function ComposerDock({
 
 function StatusFooter() {
   return h('footer', { className: 'dsh-ex-dp' },
-    h('div', { className: 'dsh-ex-status' }, 'ds-hentai')
+    h('div', { className: 'dsh-ex-status' },
+      h('a', {
+        href: 'https://github.com/lisongxuan/ds-hentai',
+        target: '_blank',
+        rel: 'noopener noreferrer'
+      }, 'ds-hentai')
+    )
   );
 }
 

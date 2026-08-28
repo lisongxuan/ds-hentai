@@ -11,11 +11,19 @@ DSH files, open a debug port, or maintain a parallel conversation store.
 ```text
 ds-hentai
 ├─ dsh.bundle → cordis.patch.yml → host no-op loader entry
-└─ dsh.client → lib/client.js → browser ThemeRuntime / CSS / overlay / settings
+├─ dsh.client → lib/client.js → browser ThemeRuntime / CSS / overlay / settings
+└─ demo/ → dist/demo → static preview (fake ctx, fixtures, no DSH)
 ```
 
 The host half exists only so `dsh plugin --profile web add ...` can compose the
 package as a standard profile bundle. All behavior is browser-local.
+
+The static demo loads the same `lib/client.js` factory through a fake
+`window.__ModuleLoader__` and a Cordis-shaped `ctx` (`theme`, `slots`,
+`sessions`, `locale`, `workspaces`, `modelDirectories`). Conversation bubbles
+are a stand-in DOM tree so session-view CSS has something to paint. `native.*`
+paths that would send, select models, or run commands mutate an in-memory
+store. `demo/` is not in the npm `files` whitelist.
 
 ## Runtime flow
 
@@ -91,4 +99,5 @@ No prompts, replies, credentials, or usage telemetry are stored or transmitted.
 `npm run build` embeds the CSS into the standard `window.__ModuleLoader__.load`
 envelope at `lib/client.js`. `npm run check` validates the envelope, the
 absence of unresolved placeholders, the absence of top-level ESM imports, and a
-size budget.
+size budget. `npm run build:demo` bundles `demo/boot.js` with React, then
+appends `lib/client.js` into `dist/demo/app.js`.

@@ -2,8 +2,23 @@
 
 ## Unreleased
 
+## 0.5.0
+
 - Settings copy (host General row and overlay Settings pane) follows the host
   `zh` / `en` locale via `ctx.locale`. Gallery chrome stays English.
+- Static demo (`demo/` → `dist/demo`): same `src/` chrome on a fake DSH host,
+  no harness / agent / model calls. `npm run preview` locally; GitHub Actions
+  can deploy `dist/demo` to Vercel.
+- Compatibility automation: L1 jsdom contract fixtures, L2 npm package probes
+  against DSH pin/`latest`, `npm run test:compat:all` for every published CLI
+  version (writes `package.json#dshCompatibility` and this matrix), and optional
+  isolated Playwright smoke (`npm run test:e2e`).
+- Peer range for `@deepseek-ai/dsh-client-*` starts at `0.0.1-rc.5` (first
+  `shell.overlay` gallery host) and allows later harness versions, including
+  `0.1.x-rc` / `0.2.x-rc` prereleases, via an explicit `||` branch per
+  `major.minor.patch` tuple. A lone `>=0.0.1-rc.5` silently excludes every
+  `0.1.0-*` and `0.1.1-*` prerelease. Overlay-less hosts keep tokens and the
+  General switch; native sidebar/composer stay visible without chrome.
 
 ## 0.4.0
 

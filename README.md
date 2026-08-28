@@ -55,21 +55,32 @@ dsh web
 npm install
 npm run build      # src/client.js + src/skin.css → lib/client.js
 npm run check      # validate bundle envelope / placeholders / no ESM import / size budget
-npm test           # build + check
+npm run build:demo # static preview → dist/demo (same src/, fake host, no harness)
+npm run preview    # build:demo + serve http://127.0.0.1:4173/
+npm test           # build + check + L1 + demo
+npm run test:compat  # L2: probe published DSH packages (pin + latest)
+npm run test:compat:all  # L1 + L2 every published @deepseek-ai/dsh version; writes the matrix
+npm run test:e2e     # L3: isolated DSH_HOME + Playwright against 0.1.0-rc.6
 npm pack --dry-run # release-view gate
 ```
+
+The static demo reuses `src/client.js` and `src/skin.css`. `demo/` is only a fake DSH host, fixtures, and a stand-in conversation pane. Search, settings, and session chrome stay local; nothing calls DeepSeek Harness, an agent, or a model API.
+
 
 ## Layout
 
 - `src/client.js` — plugin body (`THEME`, apply state machine, settings row, `shell.overlay` gallery chrome)
 - `src/skin.css` — scoped decoration + layout rebuild
+- `demo/` — static preview host (fixtures + fake `ctx`); not shipped on npm
 - `scripts/build-client.mjs` — wrap `window.__ModuleLoader__.load(...)` into `lib/client.js`
+- `scripts/build-demo.mjs` — embed the plugin bundle in `dist/demo`
 - `docs/ARCHITECTURE.md` — runtime data flow and boundaries
 - `docs/COMPATIBILITY.md` — baseline, layer stability, recovery
+- `test/compat/catalog.json` — executable probe catalog for L1/L2/L3
 
 ## Notes
 
-Browser-only plugin; it does not edit DSH files. Sessions, replies, and settings still belong to DeepSeek Harness — this skin only replaces the chrome. Preferences stay in the local browser. Needs a recent DSH Web GUI (`0.1.0-rc.6` and ui-layout with `shell.overlay`); older builds may keep only the palette and the General switch. See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+Browser-only plugin; it does not edit DSH files. Sessions, replies, and settings still belong to DeepSeek Harness — this skin only replaces the chrome. Preferences stay in the local browser. Install floor is DSH `0.0.1-rc.5` (first `shell.overlay` host); later harness versions including current `0.1.x-rc` builds are allowed. Tested pin is `0.1.0-rc.6`. See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
 ## License
 

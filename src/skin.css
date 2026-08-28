@@ -141,7 +141,7 @@ body[data-dsh-exhentai-active="true"][data-dsh-exhentai-view="session"][data-dsh
 /* Hide native sidebar; keep nodes in DOM for click adapters.
    opacity:0 is applied only when no modal is open — a child cannot override a
    parent's opacity, and Host Settings renders inside this column. */
-body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"] [class*="_sidebarCol"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class*="_sidebarCol"] {
   width: 0 !important;
   min-width: 0 !important;
   max-width: 0 !important;
@@ -153,10 +153,10 @@ body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"] [class*="
   margin: 0 !important;
   visibility: hidden !important;
 }
-body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"]:has([class*="_sidebarCol"] [role="dialog"]) [class*="_sidebarCol"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"]:has([class*="_sidebarCol"] [role="dialog"]) [class*="_sidebarCol"] {
   opacity: 1 !important;
 }
-body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"] [class*="_sidebarCol"] [role="dialog"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class*="_sidebarCol"] [role="dialog"] {
   position: fixed !important;
   left: 50% !important;
   top: 50% !important;
@@ -171,18 +171,18 @@ body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"] [class*="
   z-index: 800 !important;
   overflow: auto !important;
 }
-body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"]:has([class*="_sidebarCol"] [role="dialog"]) .dsh-ex-composer {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"]:has([class*="_sidebarCol"] [role="dialog"]) .dsh-ex-composer {
   visibility: hidden;
   pointer-events: none;
 }
-body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"] [class$="_frame"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class$="_frame"] {
   grid-template-columns: 0px minmax(0, 1fr) 0px !important;
 }
-body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"] [class$="_handle"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class$="_handle"] {
   display: none !important;
   pointer-events: none !important;
 }
-body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"] [class*="_detailsCol"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class*="_detailsCol"] {
   width: 0 !important;
   min-width: 0 !important;
   max-width: 0 !important;
@@ -194,14 +194,15 @@ body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"] [class*="
   margin: 0 !important;
   visibility: hidden !important;
 }
-body[data-dsh-exhentai-active="true"][data-dsh-exhentai-sidebar="off"] [class*="_centerCol"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class*="_centerCol"] {
   width: min(var(--ex-session-col), 100%) !important;
   max-width: var(--ex-session-col);
   justify-self: center;
 }
 
-/* Hide native composer dock when the skin composer is active. */
-body[data-dsh-exhentai-active="true"][data-dsh-exhentai-composer="skin"] [class*="_composerSeat"] {
+/* Hide native composer dock when the skin composer is active. Without
+   shell.overlay there is no skin dock — leave the native composer visible. */
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-composer="skin"] [class*="_composerSeat"] {
   position: absolute !important;
   width: 1px !important;
   height: 1px !important;

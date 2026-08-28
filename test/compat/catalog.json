@@ -1,0 +1,156 @@
+{
+  "plugin": "ds-hentai",
+  "baseline": "0.1.0-rc.6",
+  "installFrom": "0.0.1-rc.5",
+  "peerRange": ">=0.0.1-rc.5 <0.1.0 || >=0.1.0-0 <0.1.1 || >=0.1.1-0 <0.1.2 || >=0.1.2-0 <0.1.3 || >=0.1.3-0 <0.1.4 || >=0.1.4-0 <0.1.5 || >=0.1.5-0 <0.1.6 || >=0.1.6-0 <0.1.7 || >=0.1.7-0 <0.1.8 || >=0.1.8-0 <0.1.9 || >=0.1.9-0 <0.1.10 || >=0.1.10-0 <0.1.11 || >=0.1.11-0 <0.1.12 || >=0.1.12-0 <0.1.13 || >=0.1.13-0 <0.1.14 || >=0.1.14-0 <0.1.15 || >=0.1.15-0 <0.1.16 || >=0.1.16-0 <0.1.17 || >=0.1.17-0 <0.1.18 || >=0.1.18-0 <0.1.19 || >=0.1.19-0 <0.2.0 || >=0.2.0-0 <0.2.1 || >=0.2.1-0 <0.2.2 || >=0.2.2-0 <0.2.3 || >=0.2.3-0 <0.2.4 || >=0.2.4-0 <0.2.5 || >=0.2.5-0 <0.2.6 || >=0.2.6-0 <0.2.7 || >=0.2.7-0 <0.2.8 || >=0.2.8-0 <0.2.9 || >=0.2.9-0 <0.3.0 || >=0.3.0-0 <0.3.1 || >=0.3.1-0 <0.3.2 || >=0.3.2-0 <0.3.3 || >=0.3.3-0 <0.3.4 || >=0.3.4-0 <0.3.5 || >=0.3.5-0 <0.3.6 || >=0.3.6-0 <0.3.7 || >=0.3.7-0 <0.3.8 || >=0.3.8-0 <0.3.9 || >=0.3.9-0 <0.4.0 || >=0.4.0-0 || >=1.0.0-0 || >=2.0.0-0",
+  "cli": "@deepseek-ai/dsh",
+  "hosts": [
+    {
+      "id": "synthetic-degrade",
+      "kind": "fixture",
+      "face": "no-overlay",
+      "layers": ["l1"],
+      "policy": "stable-must; best-effort-degrade"
+    },
+    {
+      "id": "0.1.0-rc.6",
+      "kind": "npm",
+      "version": "0.1.0-rc.6",
+      "face": "full-rc6",
+      "layers": ["l1", "l2", "l3"],
+      "policy": "stable-and-gallery-green"
+    },
+    {
+      "id": "latest",
+      "kind": "npm",
+      "version": "latest",
+      "layers": ["l2", "l3"],
+      "policy": "stable-red; best-effort-warn"
+    }
+  ],
+  "faces": [
+    {
+      "id": "full-rc6",
+      "overlay": true,
+      "locale": true,
+      "sessions": true,
+      "expectOverlay": true,
+      "expectLocale": true
+    },
+    {
+      "id": "no-overlay",
+      "overlay": false,
+      "locale": true,
+      "sessions": true,
+      "expectOverlay": false,
+      "expectLocale": true
+    },
+    {
+      "id": "no-locale",
+      "overlay": true,
+      "locale": false,
+      "sessions": true,
+      "expectOverlay": true,
+      "expectLocale": false
+    },
+    {
+      "id": "no-sessions",
+      "overlay": true,
+      "locale": true,
+      "sessions": false,
+      "expectOverlay": true,
+      "expectLocale": true
+    }
+  ],
+  "selectors": {
+    "installed": "html[data-dsh-exhentai-installed=\"true\"]",
+    "active": "body[data-dsh-exhentai-active=\"true\"]",
+    "inactiveBody": "body:not([data-dsh-exhentai-active])",
+    "chrome": ".dsh-ex-chrome",
+    "style": "style[data-plugin=\"ds-hentai\"]",
+    "chipsOn": "body[data-dsh-exhentai-chips=\"on\"]",
+    "composerSkin": "body[data-dsh-exhentai-composer=\"skin\"]",
+    "sidebarOff": "body[data-dsh-exhentai-sidebar=\"off\"]"
+  },
+  "theme": {
+    "id": "dsh-exhentai",
+    "token": "--dsw-alias-bg-base",
+    "tokenValue": "#34353b"
+  },
+  "packages": [
+    {
+      "id": "layout",
+      "name": "@deepseek-ai/dsh-client-ui-layout",
+      "needles": [
+        {
+          "id": "shell.overlay",
+          "layer": "best-effort",
+          "pattern": "shell.overlay"
+        }
+      ]
+    },
+    {
+      "id": "theme",
+      "name": "@deepseek-ai/dsh-client-ui-theme",
+      "needles": [
+        {
+          "id": "theme/change",
+          "layer": "stable",
+          "pattern": "theme/change"
+        },
+        {
+          "id": "setTheme",
+          "layer": "stable",
+          "pattern": "setTheme"
+        }
+      ]
+    },
+    {
+      "id": "settings-general",
+      "name": "@deepseek-ai/dsh-client-ui-settings-general",
+      "needles": [
+        {
+          "id": "settings.general.item",
+          "layer": "stable",
+          "pattern": "settings.general.item"
+        }
+      ]
+    },
+    {
+      "id": "locale",
+      "name": "@deepseek-ai/dsh-client-locale",
+      "needles": [
+        {
+          "id": "locale/change",
+          "layer": "best-effort",
+          "pattern": "locale/change"
+        }
+      ]
+    },
+    {
+      "id": "conversation",
+      "name": "@deepseek-ai/dsh-client-ui-conversation",
+      "needles": []
+    },
+    {
+      "id": "sidebar",
+      "name": "@deepseek-ai/dsh-client-ui-sidebar",
+      "needles": []
+    },
+    {
+      "id": "workspace",
+      "name": "@deepseek-ai/dsh-client-ui-workspace",
+      "needles": []
+    }
+  ],
+  "cssModuleNeedles": [
+    { "id": "_bubble", "layer": "best-effort", "pattern": "_bubble" },
+    { "id": "_sessionRow", "layer": "best-effort", "pattern": "_sessionRow" },
+    { "id": "_primary", "layer": "best-effort", "pattern": "_primary" },
+    { "id": "_newSession", "layer": "best-effort", "pattern": "_newSession" },
+    { "id": "_frame", "layer": "best-effort", "pattern": "_frame" },
+    { "id": "_sidebarCol", "layer": "best-effort", "pattern": "_sidebarCol" },
+    { "id": "_titleRow", "layer": "best-effort", "pattern": "_titleRow" }
+  ],
+  "cssScanPackages": ["layout", "conversation", "sidebar", "workspace"]
+}

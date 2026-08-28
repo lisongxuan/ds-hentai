@@ -2,6 +2,11 @@ node_modules/
 *.log
 .DS_Store
 coverage/
-
+reference/
 # npm pack artifacts
 *.tgz
+test-results/
+playwright-report/
+playwright/.cache/
+dist/
+.vercel/
