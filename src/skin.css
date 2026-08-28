@@ -128,20 +128,50 @@ body[data-dsh-exhentai-active="true"] *::-webkit-scrollbar-thumb:hover { backgro
 body[data-dsh-exhentai-active="true"]::-webkit-scrollbar-corner,
 body[data-dsh-exhentai-active="true"] *::-webkit-scrollbar-corner { background: var(--ex-bg-base); }
 
+/* DSH Desktop: gallery chrome is position:fixed so it sits in the reserved
+   nav band. --ex-desktop-inset is the command-bar overlap for framed
+   modes, and always 32/20px in advanced (a shifted #root is not a containing
+   block for overlay chrome that still covers the caption). Never mark
+   .dsh-ex-chrome as -webkit-app-region: no-drag. Layout's overlayLayer>*
+   forces pointer-events:auto; none !important keeps empty chrome
+   click-through. */
+html[data-dsh-exhentai-installed="true"] {
+  --ex-desktop-inset: 0px;
+}
+html[data-dsh-exhentai-installed="true"]:has(.dshDesktopWindowsCaptionRow),
+html[data-dsh-exhentai-installed="true"]:has(body[data-dsh-desktop-mode="advanced"]) {
+  --ex-desktop-inset: max(32px, env(titlebar-area-height, 0px));
+}
+html[data-dsh-exhentai-installed="true"]:has(.dshDesktopMacCaptionRow),
+html[data-dsh-desktop-platform="darwin"]:has(body[data-dsh-desktop-mode="advanced"]) {
+  --ex-desktop-inset: max(20px, env(titlebar-area-height, 0px));
+}
+
 /* Overlay chrome reserves a thin nav/footer band; native frame stays interactive. */
 body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) {
   padding-top: var(--ex-chrome-nav);
   padding-bottom: var(--ex-chrome-foot);
   box-sizing: border-box;
 }
+/* Desktop already offsets in-flow columns for its caption. Extra body padding
+   shoved the overlay down (nav too low) and clipped the native sidebar. */
+html[data-dsh-desktop="true"] body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) {
+  padding-top: 0;
+}
+html[data-dsh-desktop="true"] body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) [class*="_centerCol"],
+html[data-dsh-desktop="true"] body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) [class*="_detailsCol"] {
+  padding-top: var(--ex-chrome-nav);
+  box-sizing: border-box;
+}
 body[data-dsh-exhentai-active="true"][data-dsh-exhentai-view="session"][data-dsh-exhentai-composer="skin"]:has(.dsh-ex-composer) {
   padding-bottom: calc(var(--ex-chrome-foot) + var(--ex-chrome-compose));
 }
 
-/* Hide native sidebar; keep nodes in DOM for click adapters.
+/* Hide native / Desktop sidebar on overlay pages (Front Page, Settings, …)
+   and when Chat/Trajectory sidebar is off. Keep nodes for click adapters.
    opacity:0 is applied only when no modal is open — a child cannot override a
    parent's opacity, and Host Settings renders inside this column. */
-body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class*="_sidebarCol"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome):is(:not([data-dsh-exhentai-view="session"]), [data-dsh-exhentai-sidebar="off"]) :is([class*="_sidebarCol"], .dshDesktopSidebarSurface, [class*="dshDesktopSidebar"], [class*="SidebarSurface"]) {
   width: 0 !important;
   min-width: 0 !important;
   max-width: 0 !important;
@@ -152,11 +182,15 @@ body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-side
   padding: 0 !important;
   margin: 0 !important;
   visibility: hidden !important;
+  flex: 0 0 0 !important;
 }
-body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"]:has([class*="_sidebarCol"] [role="dialog"]) [class*="_sidebarCol"] {
+html[data-dsh-desktop="true"] body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome):is(:not([data-dsh-exhentai-view="session"]), [data-dsh-exhentai-sidebar="off"]) :is(.dshDesktopSidebarSurface, [class*="dshDesktopSidebar"], [class*="SidebarSurface"]) {
+  display: none !important;
+}
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome):is(:not([data-dsh-exhentai-view="session"]), [data-dsh-exhentai-sidebar="off"]):has([class*="_sidebarCol"] [role="dialog"]) [class*="_sidebarCol"] {
   opacity: 1 !important;
 }
-body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class*="_sidebarCol"] [role="dialog"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome):is(:not([data-dsh-exhentai-view="session"]), [data-dsh-exhentai-sidebar="off"]) [class*="_sidebarCol"] [role="dialog"] {
   position: fixed !important;
   left: 50% !important;
   top: 50% !important;
@@ -171,18 +205,18 @@ body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-side
   z-index: 800 !important;
   overflow: auto !important;
 }
-body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"]:has([class*="_sidebarCol"] [role="dialog"]) .dsh-ex-composer {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome):is(:not([data-dsh-exhentai-view="session"]), [data-dsh-exhentai-sidebar="off"]):has([class*="_sidebarCol"] [role="dialog"]) .dsh-ex-composer {
   visibility: hidden;
   pointer-events: none;
 }
-body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class$="_frame"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome):is(:not([data-dsh-exhentai-view="session"]), [data-dsh-exhentai-sidebar="off"]) :is([class$="_frame"], [class*="dshDesktopFrame"], [class*="DesktopFrame"]) {
   grid-template-columns: 0px minmax(0, 1fr) 0px !important;
 }
-body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class$="_handle"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome):is(:not([data-dsh-exhentai-view="session"]), [data-dsh-exhentai-sidebar="off"]) [class$="_handle"] {
   display: none !important;
   pointer-events: none !important;
 }
-body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class*="_detailsCol"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome):is(:not([data-dsh-exhentai-view="session"]), [data-dsh-exhentai-sidebar="off"]) [class*="_detailsCol"] {
   width: 0 !important;
   min-width: 0 !important;
   max-width: 0 !important;
@@ -194,7 +228,7 @@ body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-side
   margin: 0 !important;
   visibility: hidden !important;
 }
-body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome)[data-dsh-exhentai-sidebar="off"] [class*="_centerCol"] {
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome):is(:not([data-dsh-exhentai-view="session"]), [data-dsh-exhentai-sidebar="off"]) [class*="_centerCol"] {
   width: min(var(--ex-session-col), 100%) !important;
   max-width: var(--ex-session-col);
   justify-self: center;
@@ -398,13 +432,37 @@ body[data-dsh-exhentai-active="true"][data-dsh-exhentai-chips="off"] :where([cla
    ============================================================ */
 .dsh-ex-chrome {
   position: fixed;
-  inset: 0;
+  top: var(--ex-desktop-inset, 0px);
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 400;
-  pointer-events: none;
+  pointer-events: none !important;
   font-family: Arial, Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 9pt;
   color: var(--ex-text, #f1f1f1);
   text-align: center;
+}
+.dsh-ex-desktop-drag {
+  display: none;
+}
+/* Advanced has no 36px command bar; the 32/20px caption is the drag region.
+   A real node (not ::before) is required for Electron app-region. */
+html[data-dsh-exhentai-window="advanced"] .dsh-ex-desktop-drag {
+  display: block;
+  position: absolute;
+  top: calc(0px - var(--ex-desktop-inset, 32px));
+  left: 0;
+  right: 0;
+  height: var(--ex-desktop-inset, 32px);
+  pointer-events: auto;
+  -webkit-app-region: drag;
+}
+html[data-dsh-desktop-platform="win32"][data-dsh-exhentai-window="advanced"] .dsh-ex-desktop-drag {
+  right: var(--dsh-windows-caption-controls-width, 138px);
+}
+html[data-dsh-desktop-platform="darwin"][data-dsh-exhentai-window="advanced"] .dsh-ex-desktop-drag {
+  left: 78px;
 }
 .dsh-ex-chrome button,
 .dsh-ex-chrome input,
@@ -414,10 +472,12 @@ body[data-dsh-exhentai-active="true"][data-dsh-exhentai-chips="off"] :where([cla
 .dsh-ex-chrome label,
 .dsh-ex-chrome table {
   pointer-events: auto;
+  -webkit-app-region: no-drag;
 }
 
 .dsh-ex-nb {
   pointer-events: auto;
+  -webkit-app-region: no-drag;
   position: absolute;
   top: 0;
   left: 0;
@@ -481,7 +541,7 @@ body[data-dsh-exhentai-active="true"] .dsh-ex-nb button[aria-current="page"] {
 
 .dsh-ex-index {
   position: absolute;
-  top: 32px;
+  top: var(--ex-chrome-nav, 32px);
   left: 0;
   right: 0;
   bottom: 42px;

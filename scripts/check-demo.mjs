@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const demoDir = resolve(root, 'dist/demo')
+const demoDir = resolve(root, 'demo')
 const errors = []
 
 async function mustExist(rel) {

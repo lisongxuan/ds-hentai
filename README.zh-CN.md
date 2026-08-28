@@ -58,7 +58,7 @@ dsh web
 npm install
 npm run build      # src/client.js + src/skin.css → lib/client.js
 npm run check      # 校验 bundle 信封/占位符/无 ESM import/大小预算
-npm run build:demo # 静态演示 → dist/demo（同一份 src/，假宿主，不跑 harness）
+npm run build:demo # 静态演示 → demo/（源码在 demo-src/，假宿主，不跑 harness）
 npm run preview    # build:demo 后本地 http://127.0.0.1:4173/
 npm test           # build + check + L1 + demo
 npm run test:compat  # L2：扫描已发布 DSH 包（pin + latest）
@@ -67,15 +67,15 @@ npm run test:e2e     # L3：隔离 DSH_HOME + Playwright，对 0.1.0-rc.6
 npm pack --dry-run # 发布视图关门
 ```
 
-静态演示复用 `src/client.js` 和 `src/skin.css`。`demo/` 只提供假 DSH 宿主、夹具数据和会话气泡。搜索、设置、翻页都在浏览器里完成，不会调用 DeepSeek Harness、Agent 或模型接口。在线副本：[dshentai-demo.arkady14.site](https://dshentai-demo.arkady14.site)。
+静态演示复用 `src/client.js` 和 `src/skin.css`。`demo-src/` 只提供假 DSH 宿主、夹具数据和会话气泡；`npm run build:demo` 把静态站写到 `demo/`（Vercel 输出目录）。搜索、设置、翻页都在浏览器里完成，不会调用 DeepSeek Harness、Agent 或模型接口。在线副本：[dshentai-demo.arkady14.site](https://dshentai-demo.arkady14.site)。
 
 ## 目录
 
 - `src/client.js` —— 插件主体（`THEME`、`apply` 状态机、设置行、`shell.overlay` 画廊壳）
 - `src/skin.css` —— 作用域装饰 + 布局重建
-- `demo/` —— 静态演示宿主（夹具 + 假 `ctx`）；不打进 npm 包
+- `demo-src/` —— 静态演示宿主（夹具 + 假 `ctx`）；不打进 npm 包
 - `scripts/build-client.mjs` —— 组装 `window.__ModuleLoader__.load(...)` 信封到 `lib/client.js`
-- `scripts/build-demo.mjs` —— 把插件 bundle 嵌进 `dist/demo`
+- `scripts/build-demo.mjs` —— 把插件 bundle 嵌进 `demo/`
 - `scripts/capture-preview.mjs` —— 从本地 demo 截 Front Page / 对话页到 `docs/preview*.png`
 - `docs/ARCHITECTURE.md` —— 运行时数据流与边界
 - `docs/COMPATIBILITY.md` —— 基线、分层稳定性、恢复方式

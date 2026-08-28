@@ -12,7 +12,7 @@ DSH files, open a debug port, or maintain a parallel conversation store.
 ds-hentai
 ├─ dsh.bundle → cordis.patch.yml → host no-op loader entry
 ├─ dsh.client → lib/client.js → browser ThemeRuntime / CSS / overlay / settings
-└─ demo/ → dist/demo → static preview (fake ctx, fixtures, no DSH)
+└─ demo-src/ → demo/ → static preview (fake ctx, fixtures, no DSH)
 ```
 
 The host half exists only so `dsh plugin --profile web add ...` can compose the
@@ -23,7 +23,7 @@ The static demo loads the same `lib/client.js` factory through a fake
 `sessions`, `locale`, `workspaces`, `modelDirectories`). Conversation bubbles
 are a stand-in DOM tree so session-view CSS has something to paint. `native.*`
 paths that would send, select models, or run commands mutate an in-memory
-store. `demo/` is not in the npm `files` whitelist.
+store. `demo-src/` is not in the npm `files` whitelist.
 
 ## Runtime flow
 
@@ -57,7 +57,13 @@ store. `demo/` is not in the npm `files` whitelist.
    / new-session call into `ctx.sessions` / `ctx.layout` when present, else
    click the native control. Overlay registration is try/caught so older
    baselines without `shell.overlay` still get tokens + CSS.
-8. Dispose theme registration, the stylesheet, the overlay, subscribers, and
+8. Stay in `shell.overlay` (no `document.body` portal). Paint gallery chrome
+   `position: fixed` with `--ex-desktop-inset` (36px framed command bar, or
+   always 32/20px in advanced). Hide native/Desktop sidebar on non-session
+   views. Do not pad `body` on `html[data-dsh-desktop="true"]`. Advanced
+   gets a `.dsh-ex-desktop-drag` strip; never set `-webkit-app-region:
+   no-drag` on the full overlay. Dispose the watcher with the stylesheet fiber.
+9. Dispose theme registration, the stylesheet, the overlay, subscribers, and
    state markers with the owning Cordis fiber.
 
 ## Native interaction boundary
@@ -99,5 +105,5 @@ No prompts, replies, credentials, or usage telemetry are stored or transmitted.
 `npm run build` embeds the CSS into the standard `window.__ModuleLoader__.load`
 envelope at `lib/client.js`. `npm run check` validates the envelope, the
 absence of unresolved placeholders, the absence of top-level ESM imports, and a
-size budget. `npm run build:demo` bundles `demo/boot.js` with React, then
-appends `lib/client.js` into `dist/demo/app.js`.
+size budget. `npm run build:demo` bundles `demo-src/boot.js` with React, then
+appends `lib/client.js` into `demo/app.js`.

@@ -59,6 +59,40 @@ document.
 - The skin makes no runtime image or network request. Nav chevrons are CSS
   triangles, not the reference site's `mr.gif`.
 
+## DSH Desktop title bar
+
+DSH Desktop (compatibility / extended) portals a 36px drag frame
+(`.dshNativeFrame`, `data-dsh-desktop-frame="titlebar"`, z-index 1000) over the
+page. Advanced Windows uses Window Controls Overlay (~32px);
+advanced macOS keeps a 20px caption row.
+
+The plugin does **not** require `desktopWindow`. Gallery chrome stays in
+`shell.overlay` (no `document.body` portal) as `position: fixed` with
+`top: var(--ex-desktop-inset)`.
+
+Compatibility / extended have a separate 36px command bar. Inset is `0`
+only when a transform/filter on an overlay ancestor already contains
+`position: fixed` below that bar. A shifted `#root` without that containing
+block still insets 36px — otherwise the overlay covers the command bar.
+Advanced has **no** command bar; the 32px (win32) / 20px (darwin) caption
+**is** the drag region. Overlay stacking would swallow it, so advanced
+always insets that height and paints `.dsh-ex-desktop-drag` in the caption
+band (leaving native window controls alone). `dsh web` never sets
+`data-dsh-exhentai-window`, so that strip is `display: none`.
+
+On `html[data-dsh-desktop="true"]`, body `padding-top` is not applied (it
+clipped the native sidebar). Overlay pages (Front Page, Settings, …) hide
+both the official `[class*="_sidebarCol"]` and Desktop's
+`dshDesktopSidebar*` / `SidebarSurface` column (the leftover rail on
+extended). The native sidebar only shows on the session surface when the
+Chat/Trajectory option is on. That overlay-page hide is the same in
+`dsh web`; session-with-sidebar and all other browser layout rules are
+unchanged.
+
+The overlay uses `pointer-events: none !important` and must **not** set
+`-webkit-app-region` on `.dsh-ex-chrome`. A live install shows
+`html[data-dsh-exhentai-desktop="inset-v5"]`.
+
 ## Recovery
 
 Use **Settings → General → ExHentai dark gallery skin / ExHentai 深色画廊皮肤 → System appearance / 系统外观**. If the settings

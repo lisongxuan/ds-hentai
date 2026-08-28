@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.6.0
+- DSH Desktop: gallery chrome is `position: fixed` just below the command bar
+  / caption, without body padding that clipped the sidebar, without overlay
+  `no-drag`, and with overlay-page sidebar hide plus an advanced-mode caption
+  drag strip.
+- Vercel static demo: build writes `demo/` (source lives in `demo-src/`) so the
+  project Output Directory named `demo` matches after Vercel clears that folder.
+
 ## 0.5.0
 
 - Settings copy (host General row and overlay Settings pane) follows the host

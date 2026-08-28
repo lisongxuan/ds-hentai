@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { before, test } from 'node:test'
 import { faceById, loadCatalog } from './catalog.mjs'
-import { bootPlugin, readBundle } from './load-plugin.mjs'
-import { THEME_ID } from './mock-ctx.mjs'
+import { bootPlugin, createPluginWorld, readBundle } from './load-plugin.mjs'
+import { createMockCtx, THEME_ID } from './mock-ctx.mjs'
 
 const catalog = await loadCatalog()
 const bundle = await readBundle()
@@ -132,4 +132,213 @@ test('disposing the fiber removes stylesheet and markers', async () => {
   assert.equal(session.document.documentElement.getAttribute('data-dsh-exhentai-installed'), null)
   assert.equal(session.document.body.getAttribute('data-dsh-exhentai-active'), null)
   session.destroy()
+})
+
+test('gallery chrome CSS reserves a desktop titlebar inset', async () => {
+  await withFace('full-rc6', (session) => {
+    const css = session.document.querySelector(sel('style')).textContent
+    assert.match(css, /--ex-desktop-inset/)
+    assert.match(css, /dshDesktopWindowsCaptionRow/)
+    assert.match(css, /dshDesktopSidebarSurface/)
+    assert.match(css, /dsh-ex-desktop-drag/)
+    assert.match(css, /data-dsh-exhentai-window="advanced"/)
+    assert.match(css, /\.dsh-ex-chrome\s*\{[^}]*position:\s*fixed/s)
+    assert.match(css, /\.dsh-ex-chrome\s*\{[^}]*top:\s*var\(--ex-desktop-inset/s)
+    assert.match(css, /\.dsh-ex-chrome\s*\{[^}]*pointer-events:\s*none\s*!important/s)
+    assert.doesNotMatch(css, /\.dsh-ex-chrome\s*\{[^}]*-webkit-app-region:\s*no-drag/s)
+    assert.equal(session.document.documentElement.getAttribute('data-dsh-exhentai-desktop'), 'inset-v5')
+  })
+})
+
+test('overlapping Desktop titlebar sets --ex-desktop-inset and clears on dispose', async () => {
+  const world = createPluginWorld(bundle)
+  const bar = world.document.createElement('div')
+  bar.className = 'dshNativeFrame'
+  bar.setAttribute('data-dsh-desktop-frame', 'titlebar')
+  bar.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 36, width: 800, height: 36,
+    toJSON() { return {} }
+  })
+  world.document.body.appendChild(bar)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '36px')
+  assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-desktop'), 'inset-v5')
+  assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-window'), 'framed')
+
+  harness.disposeEffects()
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '')
+  assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-desktop'), null)
+  assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-window'), null)
+  world.destroy()
+})
+
+test('overlay below the titlebar still insets unless it contains position:fixed', async () => {
+  const world = createPluginWorld(bundle)
+  const bar = world.document.createElement('div')
+  bar.className = 'dshNativeFrame'
+  bar.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 36, width: 800, height: 36,
+    toJSON() { return {} }
+  })
+  const slot = world.document.createElement('div')
+  slot.setAttribute('data-shell-overlay', '')
+  slot.getBoundingClientRect = () => ({
+    x: 0, y: 36, top: 36, left: 0, right: 800, bottom: 800, width: 800, height: 764,
+    toJSON() { return {} }
+  })
+  world.document.body.appendChild(bar)
+  world.document.body.appendChild(slot)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '36px')
+  harness.disposeEffects()
+  world.destroy()
+})
+
+test('transformed overlay already below the titlebar does not double-inset', async () => {
+  const world = createPluginWorld(bundle)
+  const bar = world.document.createElement('div')
+  bar.className = 'dshNativeFrame'
+  bar.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 36, width: 800, height: 36,
+    toJSON() { return {} }
+  })
+  const slot = world.document.createElement('div')
+  slot.setAttribute('data-shell-overlay', '')
+  slot.style.transform = 'translateY(0px)'
+  slot.getBoundingClientRect = () => ({
+    x: 0, y: 36, top: 36, left: 0, right: 800, bottom: 800, width: 800, height: 764,
+    toJSON() { return {} }
+  })
+  world.document.body.appendChild(bar)
+  world.document.body.appendChild(slot)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '')
+  harness.disposeEffects()
+  world.destroy()
+})
+
+test('shifted #root below the titlebar still insets unless it contains position:fixed', async () => {
+  const world = createPluginWorld(bundle)
+  const bar = world.document.createElement('div')
+  bar.className = 'dshNativeFrame'
+  bar.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 36, width: 800, height: 36,
+    toJSON() { return {} }
+  })
+  const root = world.document.createElement('div')
+  root.id = 'root'
+  root.getBoundingClientRect = () => ({
+    x: 0, y: 36, top: 36, left: 0, right: 800, bottom: 800, width: 800, height: 764,
+    toJSON() { return {} }
+  })
+  world.document.body.appendChild(bar)
+  world.document.body.appendChild(root)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '36px')
+  harness.disposeEffects()
+  world.destroy()
+})
+
+test('transformed #root that contains the overlay does not double-inset', async () => {
+  const world = createPluginWorld(bundle)
+  const bar = world.document.createElement('div')
+  bar.className = 'dshNativeFrame'
+  bar.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 36, width: 800, height: 36,
+    toJSON() { return {} }
+  })
+  const root = world.document.createElement('div')
+  root.id = 'root'
+  root.style.transform = 'translateZ(0)'
+  root.getBoundingClientRect = () => ({
+    x: 0, y: 36, top: 36, left: 0, right: 800, bottom: 800, width: 800, height: 764,
+    toJSON() { return {} }
+  })
+  const slot = world.document.createElement('div')
+  slot.setAttribute('data-shell-overlay', '')
+  slot.getBoundingClientRect = () => ({
+    x: 0, y: 36, top: 36, left: 0, right: 800, bottom: 800, width: 800, height: 764,
+    toJSON() { return {} }
+  })
+  root.appendChild(slot)
+  world.document.body.appendChild(bar)
+  world.document.body.appendChild(root)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '')
+  harness.disposeEffects()
+  world.destroy()
+})
+
+test('advanced overlay covering the caption still insets when content viewport is below', async () => {
+  const world = createPluginWorld(bundle)
+  const bar = world.document.createElement('div')
+  bar.className = 'dshDesktopWindowsCaptionRow'
+  bar.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 32, width: 800, height: 32,
+    toJSON() { return {} }
+  })
+  const viewport = world.document.createElement('div')
+  viewport.setAttribute('data-dsh-desktop-content-viewport', '')
+  viewport.getBoundingClientRect = () => ({
+    x: 0, y: 32, top: 32, left: 0, right: 800, bottom: 800, width: 800, height: 768,
+    toJSON() { return {} }
+  })
+  const slot = world.document.createElement('div')
+  slot.className = 'dshDesktopOverlay'
+  slot.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 800, width: 800, height: 800,
+    toJSON() { return {} }
+  })
+  world.document.body.appendChild(bar)
+  world.document.body.appendChild(viewport)
+  world.document.body.appendChild(slot)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '32px')
+  assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-window'), 'advanced')
+  harness.disposeEffects()
+  world.destroy()
+})
+
+test('advanced still insets when #root is shifted below the caption', async () => {
+  const world = createPluginWorld(bundle)
+  const bar = world.document.createElement('div')
+  bar.className = 'dshDesktopWindowsCaptionRow'
+  bar.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 32, width: 800, height: 32,
+    toJSON() { return {} }
+  })
+  const root = world.document.createElement('div')
+  root.id = 'root'
+  root.getBoundingClientRect = () => ({
+    x: 0, y: 32, top: 32, left: 0, right: 800, bottom: 800, width: 800, height: 768,
+    toJSON() { return {} }
+  })
+  const slot = world.document.createElement('div')
+  slot.className = 'dshDesktopOverlay'
+  slot.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 800, width: 800, height: 800,
+    toJSON() { return {} }
+  })
+  world.document.body.appendChild(bar)
+  world.document.body.appendChild(root)
+  world.document.body.appendChild(slot)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '32px')
+  assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-window'), 'advanced')
+  harness.disposeEffects()
+  world.destroy()
 })

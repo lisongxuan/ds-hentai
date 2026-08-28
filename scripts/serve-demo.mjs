@@ -4,7 +4,7 @@ import { createServer } from 'node:http'
 import { extname, join, normalize, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const root = resolve(fileURLToPath(new URL('../dist/demo', import.meta.url)))
+const root = resolve(fileURLToPath(new URL('../demo', import.meta.url)))
 const port = Number(process.env.PORT) || 4173
 const types = {
   '.css': 'text/css; charset=utf-8',

@@ -1564,15 +1564,6 @@ function hostProps(props) {
   return Object.assign({}, chromeHost || {}, inject, props || {});
 }
 
-function createPortalNode(node, target) {
-  try {
-    const rd = require('react-dom');
-    const fn = rd.createPortal || (rd.default && rd.default.createPortal);
-    if (typeof fn === 'function') return fn(node, target);
-  } catch {}
-  return node;
-}
-
 function NavBar({ view, onNav }) {
   const items = [
     { id: 'index', label: 'Front Page' },
@@ -2292,16 +2283,6 @@ function ChromeShell(props) {
   const [modelDir, setModelDir] = React.useState({ current: null, groups: [], status: 'idle', error: null });
   const [permState, setPermState] = React.useState(null);
   const [renameState, setRenameState] = React.useState(null);
-  const [portalEl] = React.useState(() => {
-    const el = document.createElement('div');
-    el.setAttribute('data-dsh-ex-portal', 'true');
-    return el;
-  });
-
-  React.useLayoutEffect(() => {
-    document.body.appendChild(portalEl);
-    return () => { if (portalEl.parentNode) portalEl.parentNode.removeChild(portalEl); };
-  }, [portalEl]);
 
   const currentId = (sessions.find((item) => item.selected) || {}).id || null;
 
@@ -2520,6 +2501,7 @@ function ChromeShell(props) {
   const navView = view === 'index' ? (filter === 'all' ? 'index' : filter) : view;
   const currentSession = labeledSessions.find((item) => item.id === currentId) || labeledSessions.find((item) => item.selected) || null;
   const tree = h('div', { className: 'dsh-ex-chrome', 'data-dsh-ex-chrome': 'true' },
+    h('div', { className: 'dsh-ex-desktop-drag', 'aria-hidden': 'true' }),
     h(NavBar, { view: navView, onNav }),
     view === 'index' ? h(IndexPane, {
       sessions: filtered,
@@ -2596,9 +2578,207 @@ function ChromeShell(props) {
     }) : null,
     h(StatusFooter)
   );
-  return createPortalNode(tree, portalEl);
+  return tree;
 }
 
+
+const DESKTOP_INSET_PROP = '--ex-desktop-inset';
+const DESKTOP_FRAME_FALLBACK = Object.freeze({
+  '[data-dsh-desktop-frame="titlebar"]': 36,
+  '.dshNativeFrame': 36,
+  '.dshDesktopWindowsCaptionRow': 32,
+  '.dshDesktopMacCaptionRow': 20
+});
+const DESKTOP_SLOT_SELECTORS = '[data-shell-overlay], .dshDesktopOverlay';
+
+function readOverlaySlot() {
+  try {
+    const chrome = document.querySelector('.dsh-ex-chrome');
+    if (chrome && chrome.parentElement) return chrome.parentElement;
+    return document.querySelector(DESKTOP_SLOT_SELECTORS);
+  } catch {
+    return null;
+  }
+}
+
+function clampDesktopInset(value) {
+  if (!Number.isFinite(value) || value <= 0) return 0;
+  return Math.min(120, Math.round(value));
+}
+
+function readWcoInset() {
+  try {
+    const overlay = navigator.windowControlsOverlay;
+    if (!overlay || overlay.visible !== true || typeof overlay.getTitlebarAreaRect !== 'function') return 0;
+    return clampDesktopInset(overlay.getTitlebarAreaRect().height);
+  } catch {
+    return 0;
+  }
+}
+
+function readUrlDesktopInset() {
+  try {
+    const params = new URLSearchParams(String(window.location.search || '').replace(/^\?/, ''));
+    const stamped = clampDesktopInset(Number(params.get('dsh-desktop-titlebar-inset')));
+    if (stamped) return stamped;
+    const mode = params.get('dsh-desktop-mode');
+    const platform = String(params.get('dsh-desktop-platform') || '').toLowerCase();
+    if (mode === 'advanced' && platform === 'darwin') return 20;
+    if (mode === 'advanced') return 32;
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
+function readMarkerInset() {
+  try {
+    const html = document.documentElement;
+    const body = document.body;
+    const modeNode = document.querySelector('[data-desktop-mode]');
+    const platNode = document.querySelector('[data-desktop-platform]');
+    const mode = (html && html.dataset.dshDesktopMode)
+      || (body && body.dataset.dshDesktopMode)
+      || (modeNode && modeNode.getAttribute('data-desktop-mode'));
+    const platform = String(
+      (html && html.dataset.dshDesktopPlatform)
+      || (body && body.dataset.dshDesktopPlatform)
+      || (platNode && platNode.getAttribute('data-desktop-platform'))
+      || ''
+    ).toLowerCase();
+    if (mode === 'advanced' && platform === 'darwin') return 20;
+    if (mode === 'advanced') return 32;
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
+function readDesktopWindowKind() {
+  try {
+    if (document.querySelector('[data-dsh-desktop-frame="titlebar"], .dshNativeFrame')) return 'framed';
+    if (document.querySelector('.dshDesktopWindowsCaptionRow, .dshDesktopMacCaptionRow')) return 'advanced';
+    const html = document.documentElement;
+    const body = document.body;
+    const modeNode = document.querySelector('[data-dsh-desktop-mode], [data-desktop-mode]');
+    const mode = (html && html.dataset.dshDesktopMode)
+      || (body && body.dataset.dshDesktopMode)
+      || (modeNode && (modeNode.getAttribute('data-dsh-desktop-mode') || modeNode.getAttribute('data-desktop-mode')))
+      || '';
+    if (mode === 'advanced') return 'advanced';
+    if (mode === 'compatibility' || mode === 'extended') return 'framed';
+    const params = new URLSearchParams(String(window.location.search || '').replace(/^\?/, ''));
+    const stamped = params.get('dsh-desktop-mode');
+    if (stamped === 'advanced') return 'advanced';
+    if (stamped === 'compatibility' || stamped === 'extended') return 'framed';
+  } catch {}
+  return '';
+}
+
+function isFixedContainingBlock(node) {
+  if (!node || node.nodeType !== 1) return false;
+  try {
+    if (node.style && node.style.transform && node.style.transform !== 'none') return true;
+    const style = window.getComputedStyle(node);
+    if (!style) return false;
+    if (style.transform && style.transform !== 'none') return true;
+    if (style.filter && style.filter !== 'none') return true;
+    if (style.perspective && style.perspective !== 'none') return true;
+    if (style.willChange && /transform|filter|perspective/.test(style.willChange)) return true;
+    if (/\b(paint|layout|strict|content)\b/.test(String(style.contain || ''))) return true;
+    if (style.backdropFilter && style.backdropFilter !== 'none') return true;
+  } catch {}
+  return false;
+}
+
+function readFixedContainingTop() {
+  let node = readOverlaySlot();
+  while (node && node !== document.documentElement && node !== document.body) {
+    if (isFixedContainingBlock(node)) {
+      try {
+        return Number(node.getBoundingClientRect().top) || 0;
+      } catch {
+        return 0;
+      }
+    }
+    node = node.parentElement;
+  }
+  return 0;
+}
+
+function measureCoveredTitlebarInset() {
+  let barBottom = 0;
+  let barHeight = 0;
+  Object.keys(DESKTOP_FRAME_FALLBACK).forEach((selector) => {
+    const node = document.querySelector(selector);
+    if (!node) return;
+    let height = 0;
+    let bottom = 0;
+    try {
+      const rect = node.getBoundingClientRect() || {};
+      height = rect.height || node.offsetHeight || 0;
+      bottom = rect.bottom || height;
+    } catch {}
+    barHeight = Math.max(barHeight, clampDesktopInset(height) || DESKTOP_FRAME_FALLBACK[selector]);
+    barBottom = Math.max(barBottom, bottom);
+  });
+  const cover = Math.max(barHeight, readWcoInset(), readUrlDesktopInset(), readMarkerInset());
+  const kind = readDesktopWindowKind();
+  if (kind === 'advanced') {
+    const darwin = document.querySelector('.dshDesktopMacCaptionRow')
+      || (document.documentElement && document.documentElement.dataset.dshDesktopPlatform === 'darwin');
+    return Math.max(cover, darwin ? 20 : 32);
+  }
+  if (cover <= 0) return 0;
+  const overlap = (barBottom || cover) - readFixedContainingTop();
+  if (overlap <= 1) return 0;
+  return clampDesktopInset(Math.min(cover, overlap));
+}
+
+function syncDesktopInset() {
+  const root = document.documentElement;
+  if (!root) return;
+  const kind = readDesktopWindowKind();
+  const px = measureCoveredTitlebarInset();
+  if (px > 0) root.style.setProperty(DESKTOP_INSET_PROP, px + 'px');
+  else root.style.removeProperty(DESKTOP_INSET_PROP);
+  root.setAttribute('data-dsh-exhentai-desktop', 'inset-v5');
+  if (kind) root.setAttribute('data-dsh-exhentai-window', kind);
+  else root.removeAttribute('data-dsh-exhentai-window');
+}
+
+function watchDesktopInset() {
+  syncDesktopInset();
+  let raf = 0;
+  const schedule = () => {
+    if (raf) return;
+    raf = requestAnimationFrame(() => {
+      raf = 0;
+      syncDesktopInset();
+    });
+  };
+  const overlay = navigator.windowControlsOverlay;
+  if (overlay && typeof overlay.addEventListener === 'function') {
+    overlay.addEventListener('geometrychange', schedule);
+  }
+  let observer = null;
+  if (typeof MutationObserver === 'function') {
+    observer = new MutationObserver(schedule);
+    observer.observe(document.documentElement, { childList: true, subtree: true });
+  }
+  return () => {
+    if (raf) cancelAnimationFrame(raf);
+    if (overlay && typeof overlay.removeEventListener === 'function') {
+      overlay.removeEventListener('geometrychange', schedule);
+    }
+    if (observer) observer.disconnect();
+    if (document.documentElement) {
+      document.documentElement.style.removeProperty(DESKTOP_INSET_PROP);
+      document.documentElement.removeAttribute('data-dsh-exhentai-desktop');
+      document.documentElement.removeAttribute('data-dsh-exhentai-window');
+    }
+  };
+}
 
 class ChromeOverlay extends React.Component {
   constructor(props) {
@@ -2826,7 +3006,10 @@ function apply(ctx) {
     document.body.setAttribute('data-dsh-exhentai-chips', chipsEnabled ? 'on' : 'off');
     markChromeFlags(nativeSidebar, composerMode);
 
+    const stopDesktopInset = watchDesktopInset();
+
     return () => {
+      stopDesktopInset();
       style.remove();
       document.body.removeAttribute('data-dsh-exhentai-active');
       document.body.removeAttribute('data-dsh-exhentai-chips');

@@ -59,7 +59,7 @@ dsh web
 npm install
 npm run build      # src/client.js + src/skin.css → lib/client.js
 npm run check      # validate bundle envelope / placeholders / no ESM import / size budget
-npm run build:demo # static preview → dist/demo (same src/, fake host, no harness)
+npm run build:demo # static preview → demo/ (demo-src/ fake host, no harness)
 npm run preview    # build:demo + serve http://127.0.0.1:4173/
 npm test           # build + check + L1 + demo
 npm run test:compat  # L2: probe published DSH packages (pin + latest)
@@ -68,16 +68,16 @@ npm run test:e2e     # L3: isolated DSH_HOME + Playwright against 0.1.0-rc.6
 npm pack --dry-run # release-view gate
 ```
 
-The static demo reuses `src/client.js` and `src/skin.css`. `demo/` is only a fake DSH host, fixtures, and a stand-in conversation pane. Search, settings, and session chrome stay local; nothing calls DeepSeek Harness, an agent, or a model API. Hosted copy: [dshentai-demo.arkady14.site](https://dshentai-demo.arkady14.site).
+The static demo reuses `src/client.js` and `src/skin.css`. `demo-src/` is only a fake DSH host, fixtures, and a stand-in conversation pane; `npm run build:demo` writes the static site to `demo/` (Vercel output directory). Search, settings, and session chrome stay local; nothing calls DeepSeek Harness, an agent, or a model API. Hosted copy: [dshentai-demo.arkady14.site](https://dshentai-demo.arkady14.site).
 
 
 ## Layout
 
 - `src/client.js` — plugin body (`THEME`, apply state machine, settings row, `shell.overlay` gallery chrome)
 - `src/skin.css` — scoped decoration + layout rebuild
-- `demo/` — static preview host (fixtures + fake `ctx`); not shipped on npm
+- `demo-src/` — static preview host (fixtures + fake `ctx`); not shipped on npm
 - `scripts/build-client.mjs` — wrap `window.__ModuleLoader__.load(...)` into `lib/client.js`
-- `scripts/build-demo.mjs` — embed the plugin bundle in `dist/demo`
+- `scripts/build-demo.mjs` — embed the plugin bundle in `demo/`
 - `scripts/capture-preview.mjs` — screenshot Front Page / session into `docs/preview*.png`
 - `docs/ARCHITECTURE.md` — runtime data flow and boundaries
 - `docs/COMPATIBILITY.md` — baseline, layer stability, recovery

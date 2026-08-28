@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process'
 import { build } from 'esbuild'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const outDir = resolve(root, 'dist/demo')
+const outDir = resolve(root, 'demo')
 
 async function run(args) {
   await new Promise((resolveRun, reject) => {
@@ -24,7 +24,7 @@ await mkdir(outDir, { recursive: true })
 
 await build({
   absWorkingDir: root,
-  entryPoints: [resolve(root, 'demo/boot.js')],
+  entryPoints: [resolve(root, 'demo-src/boot.js')],
   bundle: true,
   format: 'iife',
   platform: 'browser',
@@ -43,22 +43,11 @@ const app = `${boot}\n;\n${client}\n`
 await writeFile(resolve(outDir, 'app.js'), app, 'utf8')
 await unlink(resolve(outDir, 'boot.js')).catch(() => {})
 
-await copyFile(resolve(root, 'demo/index.html'), resolve(outDir, 'index.html'))
-await copyFile(resolve(root, 'demo/skin-host.css'), resolve(outDir, 'host.css'))
-await writeFile(resolve(outDir, 'vercel.json'), `${JSON.stringify({
-  headers: [
-    {
-      source: '/(.*)',
-      headers: [
-        { key: 'X-Robots-Tag', value: 'noindex' },
-        { key: 'Cache-Control', value: 'public, max-age=60' }
-      ]
-    }
-  ]
-}, null, 2)}\n`, 'utf8')
+await copyFile(resolve(root, 'demo-src/index.html'), resolve(outDir, 'index.html'))
+await copyFile(resolve(root, 'demo-src/skin-host.css'), resolve(outDir, 'host.css'))
 
 console.log(JSON.stringify({
-  outDir: 'dist/demo',
+  outDir: 'demo',
   bootBytes: Buffer.byteLength(boot),
   clientBytes: Buffer.byteLength(client),
   appBytes: Buffer.byteLength(app)
