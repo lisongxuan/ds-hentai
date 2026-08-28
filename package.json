@@ -50,6 +50,7 @@
     "check": "node scripts/check.mjs",
     "check:demo": "node scripts/check-demo.mjs",
     "preview": "npm run build:demo && node scripts/serve-demo.mjs",
+    "capture": "node scripts/capture-preview.mjs",
     "test": "npm run build && npm run check && npm run test:l1 && npm run build:demo && npm run check:demo",
     "test:l1": "node --test --test-timeout=30000 test/compat/l1.test.mjs",
     "test:compat": "node scripts/probe-dsh.mjs",

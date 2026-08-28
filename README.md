@@ -10,6 +10,8 @@ English | [简体中文](README.zh-CN.md)
 
 ![Session](docs/preview-session.png)
 
+![Settings](docs/preview-settings.png)
+
 ## Install
 
 ```sh
@@ -61,6 +63,7 @@ npm run build      # src/client.js + src/skin.css → lib/client.js
 npm run check      # validate bundle envelope / placeholders / no ESM import / size budget
 npm run build:demo # static preview → demo/ (demo-src/ fake host, no harness)
 npm run preview    # build:demo + serve http://127.0.0.1:4173/
+npm run capture    # screenshot Front Page / session / Settings into docs/preview*.png
 npm test           # build + check + L1 + demo
 npm run test:compat  # L2: probe published DSH packages (pin + latest)
 npm run test:compat:all  # L1 + L2 every published @deepseek-ai/dsh version; writes the matrix
@@ -78,7 +81,8 @@ The static demo reuses `src/client.js` and `src/skin.css`. `demo-src/` is only a
 - `demo-src/` — static preview host (fixtures + fake `ctx`); not shipped on npm
 - `scripts/build-client.mjs` — wrap `window.__ModuleLoader__.load(...)` into `lib/client.js`
 - `scripts/build-demo.mjs` — embed the plugin bundle in `demo/`
-- `scripts/capture-preview.mjs` — screenshot Front Page / session into `docs/preview*.png`
+- `scripts/capture-preview.mjs` — screenshot Front Page / session / Settings into `docs/preview*.png`
+- `screenshots.json` — storefront gallery order (paths relative to this file)
 - `docs/ARCHITECTURE.md` — runtime data flow and boundaries
 - `docs/COMPATIBILITY.md` — baseline, layer stability, recovery
 - `test/compat/catalog.json` — executable probe catalog for L1/L2/L3

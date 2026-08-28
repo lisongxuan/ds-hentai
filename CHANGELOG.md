@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- README screenshots include the overlay Settings pane. Root
+  `screenshots.json` lists them for storefronts.
+
 ## 0.6.0
 - DSH Desktop: gallery chrome is `position: fixed` just below the command bar
   / caption, without body padding that clipped the sidebar, without overlay
