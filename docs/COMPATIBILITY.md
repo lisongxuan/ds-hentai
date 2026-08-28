@@ -108,7 +108,7 @@ dsh web
 
 ## Published DSH matrix
 
-Scanned `@deepseek-ai/dsh` on 2026-08-28T06:18:04.515Z (plugin `0.5.0`).
+Scanned `@deepseek-ai/dsh` on 2026-08-28T06:18:04.515Z (plugin `0.6.0`).
 L2 packs the matching `@deepseek-ai/dsh-client-*` packages for each CLI version.
 L1 runs the plugin against the capability face inferred from that L2 result (same fixtures as `npm run test:l1`).
 Regenerate with `npm run test:compat:all`.

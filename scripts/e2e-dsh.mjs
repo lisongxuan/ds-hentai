@@ -126,7 +126,7 @@ async function packPlugin(work) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.help) {
-    console.log('Usage: node scripts/e2e-dsh.mjs [--version 0.1.0-rc.6|latest] [--plugin ds-hentai@0.5.0] [--port 43180] [--url http://127.0.0.1:3080] [--headed]')
+    console.log('Usage: node scripts/e2e-dsh.mjs [--version 0.1.0-rc.6|latest] [--plugin ds-hentai@0.6.0] [--port 43180] [--url http://127.0.0.1:3080] [--headed]')
     process.exit(0)
   }
 
