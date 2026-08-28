@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Settings copy (host General row and overlay Settings pane) follows the host
+  `zh` / `en` locale via `ctx.locale`. Gallery chrome stays English.
+
 ## 0.4.0
 
 - Settings: native sidebar show/hide, and a mutually exclusive native vs

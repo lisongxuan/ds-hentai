@@ -348,8 +348,12 @@ body[data-dsh-exhentai-active="true"] [role="dialog"] {
   text-align: left;
   font-size: 10pt;
 }
-body[data-dsh-exhentai-active="true"] :where([role="dialog"], [role="listbox"], [role="menu"]):not(.dsh-ex-modal) {
+body[data-dsh-exhentai-active="true"] [role="dialog"]:not(.dsh-ex-modal) {
   z-index: 500;
+}
+/* Host Settings overlay is z-index 1000; keep language / preset menus above it. */
+body[data-dsh-exhentai-active="true"] :where([role="listbox"], [role="menu"], [class*="_portal"]):not(.dsh-ex-modal) {
+  z-index: 2100;
 }
 body[data-dsh-exhentai-active="true"] [role="dialog"] h2,
 body[data-dsh-exhentai-active="true"] [class*="_settings"] h2,

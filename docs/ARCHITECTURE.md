@@ -39,7 +39,9 @@ package as a standard profile bundle. All behavior is browser-local.
 6. Register a General-settings item: appearance, category chips, native
    sidebar visibility, skin vs native composer, Front Page display mode.
    Appearance restores the previous built-in `light`, `dark`, or `system`
-   preference.
+   preference. Settings labels register a `ds-hentai` dictionary on
+   `ctx.locale` (`zh` / `en`) and re-render on `locale/change`; the gallery
+   chrome is not localized.
 7. Register a `shell.overlay` list entry (`ds-hentai-chrome`) that paints the
    gallery nav, compact session table, search-style composer, and status
    footer. Session list prefers the slot runtime `useSessions` snapshot and

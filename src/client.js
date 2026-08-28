@@ -52,6 +52,10 @@ const APPEARANCE_OPTIONS = Object.freeze([
   { id: 'system', label: 'System' }
 ]);
 const FULL_ACCESS = 'danger-full-access';
+const HOST_LOCALES = Object.freeze([
+  { id: 'zh', label: '中文' },
+  { id: 'en', label: 'English' }
+]);
 const CATEGORIES = Object.freeze([
   { id: 'chat', label: 'Chat', tone: 'ct2' },
   { id: 'code', label: 'Code', tone: 'ct3' },
@@ -64,6 +68,163 @@ const CATEGORIES = Object.freeze([
   { id: 'notes', label: 'Notes', tone: 'ct8' },
   { id: 'misc', label: 'Misc', tone: 'ct1' }
 ]);
+
+const LOCALE_NS = 'ds-hentai';
+const SETTINGS_ZH = Object.freeze({
+  'skin.title': 'DsHentai 深色画廊皮肤',
+  'skin.desc': '画廊导航、表格会话、搜索式发送与状态脚；关闭后恢复切换前的系统外观。',
+  'skin.enable': '启用皮肤',
+  'skin.system': '系统外观',
+  'chips.title': '分类彩色标签',
+  'chips.desc': '类别 chip 彩条（红/橙/金/绿/蓝/紫）；关闭后统一改用中性灰。',
+  'chips.on': '彩色标签：开启',
+  'chips.off': '彩色标签：关闭',
+  'chips.enable': '启用分类彩色标签',
+  'chips.hint': '会话标签上的分类彩条可关闭，画廊会改成统一灰色。',
+  'sidebar.title': '原生侧边栏',
+  'sidebar.desc': '会话页是否显示 DSH 左侧会话栏。关闭后用 Front Page 表切换会话。',
+  'sidebar.hint': '在 Chat / Trajectory 旁显示原生会话侧边栏。',
+  'sidebar.show': '显示',
+  'sidebar.hide': '隐藏',
+  'composer.title': '对话输入框',
+  'composer.desc': '皮肤搜索坞与原生输入卡二选一；选原生时不显示皮肤输入框。',
+  'composer.hint': '只显示一种输入框，另一种会隐藏。',
+  'composer.skin': '皮肤输入框',
+  'composer.native': '原生输入框',
+  'mode.prompt': '希望首页和搜索页使用哪种显示模式？',
+  'mode.minimal': 'Minimal',
+  'mode.minimalplus': 'Minimal+',
+  'mode.compact': 'Compact',
+  'mode.extended': 'Extended',
+  'mode.thumbnail': 'Thumbnail',
+  'host.title': '宿主',
+  'host.desc': '插件、插件市场和供应商 API 密钥仍在原生宿主面板中。',
+  'host.open': '打开宿主设置',
+  'gallery.title': '画廊皮肤',
+  'gallery.desc': '使用 DsHentai 画廊壳层，或恢复 DeepSeek Harness 内置外观。',
+  'display.title': '首页显示',
+  'preset.title': 'Agent 预设',
+  'preset.desc': '应用于当前会话。进行中的任务仍使用开始时的预设。',
+  'perm.title': '权限',
+  'perm.desc': '为当前会话选择权限模式。',
+  'perm.needSession': '请先打开一个会话。',
+  'perm.unavailable': '权限预设不可用。',
+  'appearance.title': '外观',
+  'appearance.desc': 'DeepSeek Harness 内置外观。关闭画廊皮肤时使用。',
+  'appearance.light': '浅色',
+  'appearance.dark': '深色',
+  'appearance.system': '跟随系统',
+  'language.title': '语言',
+  'language.desc': '界面语言。',
+  'models.title': '模型',
+  'models.desc': '当前会话使用的模型。供应商密钥仍在宿主设置中。',
+  'models.loading': '正在加载模型…',
+  'models.empty': '此会话没有可用模型。'
+});
+const SETTINGS_EN = Object.freeze({
+  'skin.title': 'DsHentai dark gallery skin',
+  'skin.desc': 'Gallery nav, session table, search-style send, and status footer. Turning off restores the previous system appearance.',
+  'skin.enable': 'Enable skin',
+  'skin.system': 'System appearance',
+  'chips.title': 'Category color chips',
+  'chips.desc': 'Category chip colors (red/orange/gold/green/blue/purple). Off uses a uniform gray.',
+  'chips.on': 'Color chips: on',
+  'chips.off': 'Color chips: off',
+  'chips.enable': 'Enable colored category chips',
+  'chips.hint': 'Category color chips on session tags can be turned off if you prefer a uniform gray gallery.',
+  'sidebar.title': 'Native sidebar',
+  'sidebar.desc': 'Show the DSH session sidebar on the session page. Off uses the Front Page table to switch sessions.',
+  'sidebar.hint': 'Show the native session sidebar next to Chat / Trajectory.',
+  'sidebar.show': 'Show',
+  'sidebar.hide': 'Hide',
+  'composer.title': 'Composer',
+  'composer.desc': 'Choose the skin search dock or the native composer. The other is hidden.',
+  'composer.hint': 'Choose one composer. The other is hidden.',
+  'composer.skin': 'Skin composer',
+  'composer.native': 'Native composer',
+  'mode.prompt': 'Which display mode would you like to use on the front and search pages?',
+  'mode.minimal': 'Minimal',
+  'mode.minimalplus': 'Minimal+',
+  'mode.compact': 'Compact',
+  'mode.extended': 'Extended',
+  'mode.thumbnail': 'Thumbnail',
+  'host.title': 'Host',
+  'host.desc': 'Plugins, Plugin Market, and provider API keys remain in the native host panel.',
+  'host.open': 'Open Host Settings',
+  'gallery.title': 'Gallery Skin',
+  'gallery.desc': 'Use the DsHentai gallery chrome, or restore the built-in DeepSeek Harness appearance.',
+  'display.title': 'Front Page Display',
+  'preset.title': 'Agent Preset',
+  'preset.desc': 'Applies to this session. Running work keeps the preset it began with.',
+  'perm.title': 'Permission',
+  'perm.desc': 'Choose the permission mode for the current session.',
+  'perm.needSession': 'Open a session first.',
+  'perm.unavailable': 'Permission presets are unavailable.',
+  'appearance.title': 'Appearance',
+  'appearance.desc': 'Built-in DeepSeek Harness appearance. Used when the gallery skin is off.',
+  'appearance.light': 'Light',
+  'appearance.dark': 'Dark',
+  'appearance.system': 'System',
+  'language.title': 'Language',
+  'language.desc': 'Interface language.',
+  'models.title': 'Models',
+  'models.desc': 'Model for the current session. Provider keys stay in Host Settings.',
+  'models.loading': 'Loading models…',
+  'models.empty': 'No models available for this session.'
+});
+
+function interpolateTemplate(template, params) {
+  if (!params) return template;
+  return String(template).replace(/\{(\w+)\}/g, (match, name) => (
+    Object.prototype.hasOwnProperty.call(params, name) ? String(params[name]) : match
+  ));
+}
+function detectBrowserLocaleId() {
+  try {
+    const lang = (typeof navigator !== 'undefined'
+      && ((navigator.languages && navigator.languages[0]) || navigator.language)) || 'zh';
+    return String(lang).toLowerCase().startsWith('en') ? 'en' : 'zh';
+  } catch {
+    return 'zh';
+  }
+}
+function settingsLookup(localeId, key) {
+  const dict = String(localeId || '').toLowerCase().startsWith('en') ? SETTINGS_EN : SETTINGS_ZH;
+  return dict[key] || SETTINGS_ZH[key] || SETTINGS_EN[key] || key;
+}
+function fallbackT(key, params) {
+  return interpolateTemplate(settingsLookup(detectBrowserLocaleId(), key), params);
+}
+function localeServiceOf(ctx) {
+  try {
+    if (ctx && ctx.locale) return ctx.locale;
+    if (ctx && typeof ctx.get === 'function') return ctx.get('locale');
+  } catch {}
+  return null;
+}
+function registerSettingsLocales(ctx) {
+  const locale = localeServiceOf(ctx);
+  if (!locale || typeof locale.register !== 'function') return undefined;
+  return locale.register(LOCALE_NS, { zh: SETTINGS_ZH, en: SETTINGS_EN });
+}
+function bindSettingsT(ctx) {
+  try {
+    const locale = localeServiceOf(ctx);
+    if (locale && typeof locale.bind === 'function') {
+      const bound = locale.bind(LOCALE_NS);
+      if (typeof bound === 'function') return bound;
+    }
+  } catch {}
+  return fallbackT;
+}
+function settingsModeOptions(t) {
+  const translate = typeof t === 'function' ? t : fallbackT;
+  return MODE_OPTIONS.map((item) => ({ id: item.id, label: translate('mode.' + item.id) }));
+}
+function settingsAppearanceOptions(t) {
+  const translate = typeof t === 'function' ? t : fallbackT;
+  return APPEARANCE_OPTIONS.map((item) => ({ id: item.id, label: translate('appearance.' + item.id) }));
+}
 
 const THEME = Object.freeze({
   id: THEME_ID,
@@ -1184,21 +1345,30 @@ function createNativeBridge(ctx) {
           return { id, label: item.label || item.name || id };
         }).filter(Boolean);
       }
+      if (locale && (typeof locale.setLocale === 'function' || typeof locale.set === 'function')) {
+        return HOST_LOCALES.slice();
+      }
     } catch {}
     return [];
   };
   const readLocale = () => {
     try {
       const locale = serviceOf('locale', () => ctx.locale);
-      if (!locale) return '';
-      if (typeof locale.getLocale === 'function') {
-        const value = locale.getLocale();
-        if (typeof value === 'string') return value;
-        return (value && (value.id || value.code || value.locale)) || '';
+      if (locale) {
+        if (typeof locale.getLocale === 'function') {
+          const value = locale.getLocale();
+          if (typeof value === 'string' && value) return value;
+          const id = value && (value.id || value.code || value.locale);
+          if (id) return id;
+        }
+        const snap = typeof locale.getSnapshot === 'function' ? locale.getSnapshot() : locale.active || locale.current;
+        if (typeof snap === 'string' && snap) return snap;
+        const id = snap && (snap.id || snap.code || snap.locale);
+        if (id) return id;
       }
-      const snap = typeof locale.getSnapshot === 'function' ? locale.getSnapshot() : locale.active || locale.current;
-      if (typeof snap === 'string') return snap;
-      return (snap && (snap.id || snap.code || snap.locale)) || '';
+    } catch {}
+    try {
+      return String(document.documentElement.getAttribute('lang') || '').trim();
     } catch {}
     return '';
   };
@@ -1248,25 +1418,29 @@ function OptRadios({ name, value, options, onChange }) {
   );
 }
 
-function ModeRadios({ name, mode, onChange }) {
-  return h(OptRadios, { name, value: mode, options: MODE_OPTIONS, onChange });
+function ModeRadios({ name, mode, onChange, t }) {
+  return h(OptRadios, { name, value: mode, options: settingsModeOptions(t), onChange });
 }
 
 function SettingsRow({
+  t: tProp, subscribeLocale,
   getEnabled, setEnabled, subscribe, getChips, setChips, subscribeChips,
   getMode, setMode, subscribeMode, getNativeSidebar, setNativeSidebar, subscribeNativeSidebar,
   getComposerMode, setComposerMode, subscribeComposerMode
 }) {
+  const t = typeof tProp === 'function' ? tProp : fallbackT;
   const [enabled, setLocalEnabled] = React.useState(getEnabled());
   const [chips, setLocalChips] = React.useState(getChips());
   const [mode, setLocalMode] = React.useState(getMode());
   const [nativeSidebar, setLocalSidebar] = React.useState(typeof getNativeSidebar === 'function' ? getNativeSidebar() : false);
   const [composerMode, setLocalComposer] = React.useState(typeof getComposerMode === 'function' ? getComposerMode() : 'skin');
+  const [, setLocaleRev] = React.useState(0);
   React.useEffect(() => subscribe(setLocalEnabled), [subscribe]);
   React.useEffect(() => subscribeChips(setLocalChips), [subscribeChips]);
   React.useEffect(() => subscribeMode(setLocalMode), [subscribeMode]);
   React.useEffect(() => (typeof subscribeNativeSidebar === 'function' ? subscribeNativeSidebar(setLocalSidebar) : undefined), [subscribeNativeSidebar]);
   React.useEffect(() => (typeof subscribeComposerMode === 'function' ? subscribeComposerMode(setLocalComposer) : undefined), [subscribeComposerMode]);
+  React.useEffect(() => (typeof subscribeLocale === 'function' ? subscribeLocale(setLocaleRev) : undefined), [subscribeLocale]);
 
   const rowStyle = {
     display: 'flex',
@@ -1278,7 +1452,7 @@ function SettingsRow({
   };
   const copyStyle = { marginTop: '4px', color: 'var(--dsw-alias-label-tertiary)', fontSize: '12px', lineHeight: 1.5 };
   const baseButton = {
-    minWidth: '92px',
+    minWidth: '108px',
     height: '30px',
     border: '2px solid var(--dsw-alias-border-l3)',
     borderRadius: '3px',
@@ -1295,30 +1469,30 @@ function SettingsRow({
   return h('div', { className: 'dsh-ex-host-settings' },
     h('div', { style: rowStyle },
       h('div', { style: { minWidth: 0 } },
-        h('div', { style: { color: 'var(--dsw-alias-label-primary)', fontWeight: 600 } }, 'ExHentai 深色画廊皮肤'),
-        h('div', { style: copyStyle }, '画廊导航、表格会话、搜索式发送与状态脚；关闭后恢复切换前的系统外观。')
+        h('div', { style: { color: 'var(--dsw-alias-label-primary)', fontWeight: 600 } }, t('skin.title')),
+        h('div', { style: copyStyle }, t('skin.desc'))
       ),
       h('div', { style: { display: 'flex', gap: '8px', flexShrink: 0 } },
-        h('button', { type: 'button', style: buttonStyle(enabled), 'aria-pressed': enabled, onClick: () => { setEnabled(true); setLocalEnabled(true); } }, '启用皮肤'),
-        h('button', { type: 'button', style: buttonStyle(!enabled), 'aria-pressed': !enabled, onClick: () => { setEnabled(false); setLocalEnabled(false); } }, '系统外观')
+        h('button', { type: 'button', style: buttonStyle(enabled), 'aria-pressed': enabled, onClick: () => { setEnabled(true); setLocalEnabled(true); } }, t('skin.enable')),
+        h('button', { type: 'button', style: buttonStyle(!enabled), 'aria-pressed': !enabled, onClick: () => { setEnabled(false); setLocalEnabled(false); } }, t('skin.system'))
       )
     ),
     h('div', { style: rowStyle },
       h('div', { style: { minWidth: 0 } },
-        h('div', { style: { color: 'var(--dsw-alias-label-primary)', fontWeight: 600 } }, '分类彩色标签'),
-        h('div', { style: copyStyle }, '类别 chip 彩条（红/橙/金/绿/蓝/紫）；关闭后统一改用中性灰。')
+        h('div', { style: { color: 'var(--dsw-alias-label-primary)', fontWeight: 600 } }, t('chips.title')),
+        h('div', { style: copyStyle }, t('chips.desc'))
       ),
       h('button', {
         type: 'button',
-        style: Object.assign({}, buttonStyle(chips), { minWidth: '112px' }),
+        style: Object.assign({}, buttonStyle(chips), { minWidth: '132px' }),
         'aria-pressed': chips,
         onClick: () => { const next = !chips; setChips(next); setLocalChips(next); }
-      }, chips ? '彩色标签：开启' : '彩色标签：关闭')
+      }, chips ? t('chips.on') : t('chips.off'))
     ),
     h('div', { style: rowStyle },
       h('div', { style: { minWidth: 0 } },
-        h('div', { style: { color: 'var(--dsw-alias-label-primary)', fontWeight: 600 } }, '原生侧边栏'),
-        h('div', { style: copyStyle }, '会话页是否显示 DSH 左侧会话栏。关闭后用 Front Page 表切换会话。')
+        h('div', { style: { color: 'var(--dsw-alias-label-primary)', fontWeight: 600 } }, t('sidebar.title')),
+        h('div', { style: copyStyle }, t('sidebar.desc'))
       ),
       h('div', { style: { display: 'flex', gap: '8px', flexShrink: 0 } },
         h('button', {
@@ -1326,19 +1500,19 @@ function SettingsRow({
           style: buttonStyle(nativeSidebar),
           'aria-pressed': nativeSidebar,
           onClick: () => { if (setNativeSidebar) setNativeSidebar(true); setLocalSidebar(true); }
-        }, '显示'),
+        }, t('sidebar.show')),
         h('button', {
           type: 'button',
           style: buttonStyle(!nativeSidebar),
           'aria-pressed': !nativeSidebar,
           onClick: () => { if (setNativeSidebar) setNativeSidebar(false); setLocalSidebar(false); }
-        }, '隐藏')
+        }, t('sidebar.hide'))
       )
     ),
     h('div', { style: rowStyle },
       h('div', { style: { minWidth: 0 } },
-        h('div', { style: { color: 'var(--dsw-alias-label-primary)', fontWeight: 600 } }, '对话输入框'),
-        h('div', { style: copyStyle }, '皮肤搜索坞与原生输入卡二选一；选原生时不显示皮肤输入框。')
+        h('div', { style: { color: 'var(--dsw-alias-label-primary)', fontWeight: 600 } }, t('composer.title')),
+        h('div', { style: copyStyle }, t('composer.desc'))
       ),
       h('div', { style: { display: 'flex', gap: '8px', flexShrink: 0 } },
         h('button', {
@@ -1346,20 +1520,21 @@ function SettingsRow({
           style: buttonStyle(composerMode === 'skin'),
           'aria-pressed': composerMode === 'skin',
           onClick: () => { if (setComposerMode) setComposerMode('skin'); setLocalComposer('skin'); }
-        }, '皮肤输入框'),
+        }, t('composer.skin')),
         h('button', {
           type: 'button',
           style: buttonStyle(composerMode === 'native'),
           'aria-pressed': composerMode === 'native',
           onClick: () => { if (setComposerMode) setComposerMode('native'); setLocalComposer('native'); }
-        }, '原生输入框')
+        }, t('composer.native'))
       )
     ),
     h('div', { className: 'dsh-ex-optouter', style: { padding: '14px 0' } },
-      h('p', { style: { margin: '0 0 8px', color: 'var(--dsw-alias-label-primary)' } }, 'Which display mode would you like to use on the front and search pages?'),
+      h('p', { style: { margin: '0 0 8px', color: 'var(--dsw-alias-label-primary)' } }, t('mode.prompt')),
       h(ModeRadios, {
         name: 'dsh-ex-host-mode',
         mode,
+        t,
         onChange: (next) => { setMode(next); setLocalMode(next); }
       })
     )
@@ -1780,18 +1955,20 @@ function IndexPane({
 }
 
 function SettingsPane({
-  enabled, setEnabled, chips, setChips, mode, setMode,
+  t: tProp, enabled, setEnabled, chips, setChips, mode, setMode,
   nativeSidebar, setNativeSidebar, composerMode, setComposerMode,
   appearance, setAppearance, native, onHostSettings,
-  presetLabel, permState, onSelectPerm, sessionId, modelDir, onSelectModel
+  presetLabel, permState, onSelectPerm, sessionId, modelDir, onSelectModel,
+  localeRev
 }) {
+  const t = typeof tProp === 'function' ? tProp : fallbackT;
   const locales = typeof native.listLocales === 'function' ? native.listLocales() : [];
   const [localeId, setLocaleId] = React.useState(() => (typeof native.readLocale === 'function' ? native.readLocale() : ''));
   React.useEffect(() => {
     if (typeof native.readLocale !== 'function') return undefined;
     setLocaleId(native.readLocale() || '');
     return undefined;
-  }, [native]);
+  }, [native, localeRev]);
   const presets = typeof native.listPresets === 'function' ? native.listPresets() : DEFAULT_PRESETS.slice();
   const currentPreset = String(presetLabel || '').toLowerCase();
   const permOptions = permState && Array.isArray(permState.options)
@@ -1805,68 +1982,68 @@ function SettingsPane({
     : (locales.find((item) => localeId && (item.id === localeId.split('-')[0] || String(item.label).toLowerCase() === String(localeId).toLowerCase())) || {}).id;
   return h('div', { className: 'dsh-ex-index' },
     h('div', { className: 'dsh-ex-stuff', id: 'dsh-ex-outer' },
-      h('h2', null, 'Host'),
+      h('h2', null, t('host.title')),
       h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Plugins, Plugin Market, and provider API keys remain in the native host panel.'),
+        h('p', null, t('host.desc')),
         h('p', null,
-          h('input', { type: 'button', value: 'Open Host Settings', onClick: onHostSettings })
+          h('input', { type: 'button', value: t('host.open'), onClick: onHostSettings })
         )
       ),
-      h('h2', null, 'Gallery Skin'),
+      h('h2', null, t('gallery.title')),
       h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Use the ExHentai gallery chrome, or restore the built-in DeepSeek Harness appearance.'),
+        h('p', null, t('gallery.desc')),
         h(OptRadios, {
           name: 'dsh-ex-skin',
           value: enabled ? 'skin' : 'system',
           options: [
-            { id: 'skin', label: 'Enable gallery skin' },
-            { id: 'system', label: 'System appearance' }
+            { id: 'skin', label: t('skin.enable') },
+            { id: 'system', label: t('skin.system') }
           ],
           onChange: (id) => { if (setEnabled) setEnabled(id === 'skin'); }
         })
       ),
       h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Category color chips on session tags can be turned off if you prefer a uniform gray gallery.'),
+        h('p', null, t('chips.hint')),
         h('p', null,
           h('label', { className: 'dsh-ex-lc' },
             h('input', { type: 'checkbox', checked: chips, onChange: () => setChips(!chips) }),
             h('span', null),
-            ' Enable colored category chips'
+            t('chips.enable')
           )
         )
       ),
       h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Show the native session sidebar next to Chat / Trajectory.'),
+        h('p', null, t('sidebar.hint')),
         h(OptRadios, {
           name: 'dsh-ex-sidebar',
           value: nativeSidebar ? 'show' : 'hide',
           options: [
-            { id: 'show', label: 'Show native sidebar' },
-            { id: 'hide', label: 'Hide native sidebar' }
+            { id: 'show', label: t('sidebar.show') },
+            { id: 'hide', label: t('sidebar.hide') }
           ],
           onChange: (id) => setNativeSidebar(id === 'show')
         })
       ),
       h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Choose one composer. The other is hidden.'),
+        h('p', null, t('composer.hint')),
         h(OptRadios, {
           name: 'dsh-ex-composer',
           value: composerMode,
           options: [
-            { id: 'skin', label: 'Skin composer' },
-            { id: 'native', label: 'Native composer' }
+            { id: 'skin', label: t('composer.skin') },
+            { id: 'native', label: t('composer.native') }
           ],
           onChange: setComposerMode
         })
       ),
-      h('h2', null, 'Front Page Display'),
+      h('h2', null, t('display.title')),
       h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Which display mode would you like to use on the front and search pages?'),
-        h(ModeRadios, { name: 'dsh-ex-settings-mode', mode, onChange: setMode })
+        h('p', null, t('mode.prompt')),
+        h(ModeRadios, { name: 'dsh-ex-settings-mode', mode, t, onChange: setMode })
       ),
-      h('h2', null, 'Agent Preset'),
+      h('h2', null, t('preset.title')),
       h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Applies to this session. Running work keeps the preset it began with.'),
+        h('p', null, t('preset.desc')),
         h('div', { className: 'dsh-ex-optinner' },
           presets.map((item) => h('p', { key: item.id },
             h('label', { className: 'dsh-ex-lr' },
@@ -1884,13 +2061,13 @@ function SettingsPane({
           ))
         )
       ),
-      h('h2', null, 'Permission'),
+      h('h2', null, t('perm.title')),
       h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Choose the permission mode for the current session.'),
+        h('p', null, t('perm.desc')),
         !sessionId
-          ? h('p', { className: 'dsh-ex-dim' }, 'Open a session first.')
+          ? h('p', { className: 'dsh-ex-dim' }, t('perm.needSession'))
           : permOptions.length === 0
-            ? h('p', { className: 'dsh-ex-dim' }, 'Permission presets are unavailable.')
+            ? h('p', { className: 'dsh-ex-dim' }, t('perm.unavailable'))
             : h('div', { className: 'dsh-ex-optinner' },
               permOptions.map((item) => h('p', { key: item.value },
                 h('label', { className: 'dsh-ex-lr' },
@@ -1906,19 +2083,19 @@ function SettingsPane({
               ))
             )
       ),
-      h('h2', null, 'Appearance'),
+      h('h2', null, t('appearance.title')),
       h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Built-in DeepSeek Harness appearance. Used when the gallery skin is off.'),
+        h('p', null, t('appearance.desc')),
         h(OptRadios, {
           name: 'dsh-ex-appearance',
           value: appearance,
-          options: APPEARANCE_OPTIONS.slice(),
+          options: settingsAppearanceOptions(t),
           onChange: setAppearance
         })
       ),
-      locales.length ? h('h2', null, 'Language') : null,
+      locales.length ? h('h2', null, t('language.title')) : null,
       locales.length ? h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Interface language.'),
+        h('p', null, t('language.desc')),
         h(OptRadios, {
           name: 'dsh-ex-locale',
           value: localeValue || locales[0].id,
@@ -1928,16 +2105,16 @@ function SettingsPane({
           }
         })
       ) : null,
-      h('h2', null, 'Models'),
+      h('h2', null, t('models.title')),
       h('div', { className: 'dsh-ex-optouter' },
-        h('p', null, 'Model for the current session. Provider keys stay in Host Settings.'),
+        h('p', null, t('models.desc')),
         !sessionId
-          ? h('p', { className: 'dsh-ex-dim' }, 'Open a session first.')
+          ? h('p', { className: 'dsh-ex-dim' }, t('perm.needSession'))
           : h('div', { className: 'dsh-ex-optinner' },
-            modelDir && modelDir.status === 'loading' ? h('p', { className: 'dsh-ex-dim' }, 'Loading models…') : null,
+            modelDir && modelDir.status === 'loading' ? h('p', { className: 'dsh-ex-dim' }, t('models.loading')) : null,
             modelDir && modelDir.error ? h('p', { className: 'dsh-ex-error' }, modelDir.error) : null,
             choices.length === 0 && (!modelDir || modelDir.status !== 'loading')
-              ? h('p', { className: 'dsh-ex-dim' }, 'No models available for this session.')
+              ? h('p', { className: 'dsh-ex-dim' }, t('models.empty'))
               : choices.map((item) => h('p', { key: item.id },
                 h('label', { className: 'dsh-ex-lr', title: `${item.group} / ${item.label}` },
                   h('input', {
@@ -2083,6 +2260,8 @@ function ChromeShell(props) {
   const nativeSidebar = useStore(host.getNativeSidebar, host.subscribeNativeSidebar, false);
   const composerMode = useStore(host.getComposerMode, host.subscribeComposerMode, 'skin');
   const appearance = useStore(host.getAppearance, host.subscribeAppearance, 'system');
+  const localeRev = useStore(host.getLocaleRev, host.subscribeLocale, 0);
+  const t = typeof host.t === 'function' ? host.t : fallbackT;
   const setMode = host.setMode || (() => {});
   const setFavs = host.setFavs || (() => {});
   const setChips = host.setChips || (() => {});
@@ -2358,6 +2537,7 @@ function ChromeShell(props) {
       onArchive
     }) : null,
     view === 'settings' ? h(SettingsPane, {
+      t,
       enabled: active,
       setEnabled,
       chips: chipsEnabled,
@@ -2377,7 +2557,8 @@ function ChromeShell(props) {
       onSelectPerm,
       sessionId: currentId,
       modelDir,
-      onSelectModel
+      onSelectModel,
+      localeRev
     }) : null,
     view === 'session' && composerMode === 'skin' ? h(ComposerDock, {
       title: currentSession && currentSession.title,
@@ -2444,6 +2625,7 @@ function apply(ctx) {
   const sidebarSubscribers = new Set();
   const composerSubscribers = new Set();
   const appearanceSubscribers = new Set();
+  const localeSubscribers = new Set();
   const restoreOnBoot = readEnabled();
   let active = false;
   let chipsEnabled = readChipsEnabled();
@@ -2461,7 +2643,10 @@ function apply(ctx) {
   let settleTimer = null;
   let reassertTimer = null;
   let disposed = false;
+  let localeRev = 0;
   const native = createNativeBridge(ctx);
+  try { registerSettingsLocales(ctx); } catch {}
+  const hostT = bindSettingsT(ctx);
 
   const clearBootTimers = () => {
     if (retryTimer !== null) window.clearTimeout(retryTimer);
@@ -2557,6 +2742,20 @@ function apply(ctx) {
   };
 
   ctx.effect(() => ctx.theme.register(THEME), 'ds-hentai: theme registration');
+  try {
+    ctx.effect(() => {
+      const dispose = registerSettingsLocales(ctx);
+      return typeof dispose === 'function' ? dispose : undefined;
+    }, 'ds-hentai: settings dictionaries');
+  } catch {
+    try { registerSettingsLocales(ctx); } catch {}
+  }
+  try {
+    ctx.on('locale/change', () => {
+      localeRev += 1;
+      notify(localeSubscribers, localeRev);
+    });
+  } catch {}
   ctx.effect(() => () => {
     disposed = true;
     clearBootTimers();
@@ -2639,6 +2838,7 @@ function apply(ctx) {
       sidebarSubscribers.clear();
       composerSubscribers.clear();
       appearanceSubscribers.clear();
+      localeSubscribers.clear();
     };
   }, 'ds-hentai: scoped stylesheet');
 
@@ -2678,6 +2878,9 @@ function apply(ctx) {
     getAppearance: () => previousTheme,
     setAppearance: setAppearanceValue,
     subscribeAppearance: bind(appearanceSubscribers, () => previousTheme),
+    t: hostT,
+    getLocaleRev: () => localeRev,
+    subscribeLocale: bind(localeSubscribers, () => localeRev),
     setEnabled,
     native
   };
@@ -2701,7 +2904,10 @@ function apply(ctx) {
       subscribeNativeSidebar: bind(sidebarSubscribers, () => nativeSidebar),
       getComposerMode: () => composerMode,
       setComposerMode: setComposerModeValue,
-      subscribeComposerMode: bind(composerSubscribers, () => composerMode)
+      subscribeComposerMode: bind(composerSubscribers, () => composerMode),
+      t: hostT,
+      getLocaleRev: () => localeRev,
+      subscribeLocale: bind(localeSubscribers, () => localeRev)
     })
   }, SettingsRow));
 
@@ -2741,6 +2947,9 @@ function apply(ctx) {
         getAppearance: () => previousTheme,
         setAppearance: setAppearanceValue,
         subscribeAppearance: bind(appearanceSubscribers, () => previousTheme),
+        t: hostT,
+        getLocaleRev: () => localeRev,
+        subscribeLocale: bind(localeSubscribers, () => localeRev),
         setEnabled,
         native
       })
@@ -2756,4 +2965,4 @@ function apply(ctx) {
 exports.THEME = THEME;
 exports.THEME_ID = THEME_ID;
 exports.apply = apply;
-exports.inject = ['theme', 'slots'];
+exports.inject = ['theme', 'slots', 'locale'];

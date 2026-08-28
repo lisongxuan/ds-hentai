@@ -12,7 +12,9 @@
 
 - **Stable:** `dsh.bundle`, `dsh.client`, `ctx.theme.register`, `ctx.theme.setTheme`,
   `theme/change`, `settings.general.item`, and the documented `--dsw-*` tokens.
-- **Best effort:** `shell.overlay` chrome; hashed CSS-module suffix selectors such as
+- **Best effort:** `ctx.locale.register` / `bind` / `locale/change` for settings
+  copy (`zh` / `en`). Without the locale service, settings fall back to the
+  browser language. `shell.overlay` chrome; hashed CSS-module suffix selectors such as
   `[class$="_bubble"]`, `[class*="_sessionRow"]`, `:has()` title-bar rules;
   native-control adapters (send / attach / settings / new session) that match
   by accessible name or `_primary` / `textarea` / `input[type=file]`;
@@ -36,7 +38,7 @@
 
 ## Recovery
 
-Use **Settings → General → ExHentai 深色画廊皮肤 → 系统外观**. If the settings
+Use **Settings → General → ExHentai dark gallery skin / ExHentai 深色画廊皮肤 → System appearance / 系统外观**. If the settings
 UI cannot be opened, removing the plugin and restarting DSH removes every
 effect:
 
