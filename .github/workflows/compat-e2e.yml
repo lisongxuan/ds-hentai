@@ -1,0 +1,70 @@
+# L3 compatibility smoke: install the packed tarball into a real DeepSeek
+# Harness, boot its Web GUI on loopback, and drive it with Playwright.
+#
+# docs/COMPATIBILITY.md promises this layer as "Nightly / workflow_dispatch";
+# scripts/e2e-dsh.mjs already does the heavy lifting (temporary DSH_HOME, npx
+# install of the target DSH, chromium download, cleanup). This workflow is the
+# scheduled half of that promise.
+#
+# Nightly runs the pinned DSH version (0.1.0-rc.6), matching `npm run test:e2e`
+# on a developer machine. Use "Run workflow" with `version` set to `latest` or
+# any published version to probe host drift on demand.
+#
+# This is deliberately separate from ci.yml: it is slow and network-heavy, so it
+# never gates a pull request.
+
+name: Compat E2E (L3)
+
+on:
+  schedule:
+    # 03:17 UTC (11:17 Asia/Shanghai); off the hour to avoid the cron rush.
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'DSH version or dist-tag to test (empty = pinned 0.1.0-rc.6)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compat-e2e-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run check
+      - name: L3 smoke against a real DSH
+        env:
+          # Passed through the environment rather than interpolated into the
+          # script, so a dispatch input can never be executed as shell.
+          DSH_E2E_TARGET: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+          if [ -n "${DSH_E2E_TARGET:-}" ]; then
+            npm run test:e2e -- --version "$DSH_E2E_TARGET"
+          else
+            npm run test:e2e
+          fi
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7

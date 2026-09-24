@@ -5,6 +5,18 @@
 #   2. git tag -a vX.Y.Z -m vX.Y.Z && git push origin vX.Y.Z
 #   3. This workflow packs once, publishes that file to npm, then attaches
 #      the same bytes to the GitHub Release (versioned + stable names).
+#   Recovery: if a step fails, fix it on main, then run this workflow by hand
+#   (Actions → Release → Run workflow) and pass the existing tag in `tag`.
+#   A version already on npm is skipped, never republished, so a retry can
+#   finish the GitHub Release without moving the tag.
+#
+# Auth is npm Trusted Publishing (OIDC) — there is no NPM_TOKEN anywhere.
+# `actions/setup-node` must NOT be given `registry-url`: that input writes an
+# .npmrc containing `_authToken=${NODE_AUTH_TOKEN}` and exports a dummy
+# `NODE_AUTH_TOKEN` sentinel, so npm sends a bogus token instead of exchanging
+# the OIDC token. The registry rejects it and npm reports the failure as
+# `E404 ... you do not have permission` — a misleading auth error. The guard
+# step below fails loudly if such a token ever reappears.
 #
 # First-time npm setup (Trusted Publishing, no NPM_TOKEN):
 #   npmjs.com → package (or unpublished name) → Trusted Publisher
@@ -21,6 +33,12 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to release, e.g. v0.7.0'
+        required: true
+        type: string
 
 concurrency:
   group: release-${{ github.ref }}
@@ -35,22 +53,55 @@ jobs:
     permissions:
       contents: write
       id-token: write
+    env:
+      # github.event.inputs is part of the event payload, so this expression is
+      # valid in every context (unlike the `inputs` context). Tag pushes leave
+      # it empty and fall back to the tag name.
+      RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
 
-      - uses: actions/setup-node@v4
+      # Do not add `registry-url` here; see the note at the top of this file.
+      # This job holds `id-token: write`, so dependency caching stays off.
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
 
       - name: Require npm CLI that supports Trusted Publishing
         run: npm install -g npm@^11.5.1
+
+      - name: Assert nothing shadows OIDC trusted publishing
+        run: |
+          set -euo pipefail
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ]; then
+            echo "::error::No OIDC token endpoint; this job needs 'id-token: write'."
+            exit 1
+          fi
+          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "::error::NODE_AUTH_TOKEN is set, so npm would publish with that token instead of trusted publishing. Remove it and any setup-node 'registry-url'."
+            exit 1
+          fi
+          # Do not try `npm config get //registry.npmjs.org/:_authToken`: npm
+          # refuses to print protected options ("the ... option is protected"),
+          # so that check would silently never fire. Read the files instead.
+          global_config="$(npm config get globalconfig 2>/dev/null || true)"
+          for rc in "${NPM_CONFIG_USERCONFIG:-$HOME/.npmrc}" "$PWD/.npmrc" "$global_config"; do
+            [ -n "$rc" ] && [ -f "$rc" ] || continue
+            if grep -qiE '^[[:space:]]*([^#]*:)?_authToken[[:space:]]*=' "$rc"; then
+              echo "::error::$rc configures an _authToken for a registry. It shadows OIDC trusted publishing and makes the registry answer 404. Drop setup-node 'registry-url' and any token in that file."
+              exit 1
+            fi
+          done
+          echo "OK: no registry token configured; OIDC trusted publishing will be used."
 
       - name: Verify tag matches package.json
         id: meta
         run: |
           set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
+          tag="${RELEASE_TAG}"
           version="${tag#v}"
           pkg="$(node -p "require('./package.json').version")"
           name="$(node -p "require('./package.json').name")"
@@ -97,6 +148,19 @@ jobs:
           else
             npm publish "./${TARBALL}" --access public --tag "$NPM_TAG"
           fi
+          # Never let a silent auth failure reach the Release step as a
+          # publication that nobody noticed did not happen.
+          for attempt in 1 2 3; do
+            live="$(npm view "${NAME}@${VERSION}" version 2>/dev/null || true)"
+            if [ "$live" = "$VERSION" ]; then
+              echo "${NAME}@${VERSION} is live on the registry."
+              exit 0
+            fi
+            echo "Waiting for ${NAME}@${VERSION} to appear (attempt ${attempt}/3)..."
+            sleep 5
+          done
+          echo "::error::${NAME}@${VERSION} is not readable from the registry after publishing."
+          exit 1
 
       - name: Extract CHANGELOG notes for this version
         env:
