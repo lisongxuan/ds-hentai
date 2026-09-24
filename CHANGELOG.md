@@ -1,9 +1,54 @@
 # Changelog
 
-## Unreleased
+## 0.7.0
 
-- README screenshots include the overlay Settings pane. Root
-  `screenshots.json` lists them for storefronts.
+- **Right sidebar.** The skin covers the sidebar DSH added after `0.1.0-rc.6` —
+  the guide panel, dockkit tab strip, files tree, and terminal frame — via
+  semantic hooks (`data-sidebar-right-*`, `data-dockkit-*`, `data-files-*`), since
+  that feature mixes two class conventions and a suffix selector such as
+  `[class$="_tab"]` would silently miss the dockkit chrome. Guide entries become
+  zebra rows, tabs lose their 12px pill, and the stock hero glyph (`#3c3c3d` on a
+  `#34353b` panel, ~1.06:1) is recoloured locally rather than by redefining the
+  host's shared static token.
+- **Fixed a stray 1px rule** down the middle of the conversation: DSH keeps
+  `[data-sidebar-right-panel]` in the DOM at full size while the sidebar is
+  closed, so styling it unconditionally painted a background and left border over
+  an empty box. Every right-sidebar rule is now gated on
+  `[data-sidebar-right-open="true"]`.
+- **Composer chips and a new setting.** `[Workspace files]` and `[New terminal]`
+  open the matching native pane on demand; the terminal entry's handler sits on an
+  inner button, so the inner control is clicked. **原生右侧边栏 / Native right
+  sidebar** (default on, in the host General row and the skin's Settings pane)
+  hides the sidebar's only DSH-shipped entry point when switched off, so the empty
+  `开始` panel never appears on its own.
+- **Chips only where they work.** The two right-pane chips render only when the
+  host actually ships the right sidebar (detected through
+  `[data-sidebar-right-panel]` / the guide entry / the opener, re-checked briefly
+  after mount), so hosts without that sidebar no longer show two buttons that do
+  nothing. The static demo gained a fake right sidebar — guide panel, dockkit
+  strip, files tree, terminal — so the sidebar skin and both chips are previewable
+  without installing DSH, and `docs/preview-sidebar.png` joins the README
+  screenshots.
+- **Theme layer** adds `--dsw-alias-label-quaternary`,
+  `--dsw-alias-state-warning-primary`, and the malformed
+  `--dsw-alias-brand-primary-new-colorprimary-new-color` the `0.1.7` browser pane
+  asks for (a host-side template artifact, inert once the host fixes the name).
+- **Verified through DSH `0.1.7-rc.1`** (`next`), plus `0.1.5-rc.3`,
+  `0.1.6-alpha.2`, and `0.1.7-alpha.1/2`: stable APIs, `shell.overlay`, locale, and
+  the gallery chrome all load with no page errors, and the peer range already
+  admits every one of them. `0.1.7-rc.1` loads the same 57 client bundles as
+  `0.1.7-alpha.2`, and its fresh-profile `内测声明` / API-key dialogs are host-side.
+- **The compatibility matrix left `package.json`.** `dshCompatibility` held ~150
+  lines of per-version probe rows that nothing reads at install or run time, so the
+  field is gone (243 lines to 97) and `npm run test:compat:all` now writes
+  `docs/COMPATIBILITY.md` only.
+- **Harness fixes.** `scripts/e2e-dsh.mjs` handles the DSH `>= 0.1.5` browser auth
+  gate (launch token to session cookie to Playwright storage state), which had been
+  failing every L3 smoke from `0.1.5-rc.2` on. `test/compat/catalog.json` scans
+  `ui-chat` (where `_bubble` moved) and the two sidebar packages, and
+  `scripts/compat-lib.mjs` treats a package a version never published as *not
+  applicable* instead of a miss. README screenshots include the overlay Settings
+  pane.
 
 ## 0.6.0
 - DSH Desktop: gallery chrome is `position: fixed` just below the command bar

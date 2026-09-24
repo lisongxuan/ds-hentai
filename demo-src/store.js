@@ -39,7 +39,10 @@ function sessionRecord(item, currentId) {
 }
 
 export function createDemoStore() {
-  const initialCurrent = SESSIONS[0].id
+  // Match a fresh DSH profile: the shell opens without an active session.
+  // The fixture sessions remain available from Front Page and become active
+  // when the user opens one of the gallery rows.
+  const initialCurrent = null
   let state = {
     currentId: initialCurrent,
     sessions: SESSIONS.map((item) => sessionRecord(item, initialCurrent)),
@@ -51,6 +54,7 @@ export function createDemoStore() {
     locale: 'en',
     settingsOpen: false,
     workspaceOpen: false,
+    rightSidebar: { open: false, active: 'guide', tabs: [{ id: 'guide', title: 'Start', kind: 'guide' }] },
     notice: null
   }
   const listeners = new Set()
@@ -268,6 +272,36 @@ export function createDemoStore() {
     return { ok: true, value: { matched: true } }
   }
 
+  const setRightSidebar = (patch) => update({ rightSidebar: Object.assign({}, state.rightSidebar, patch) })
+
+  const openRightSidebar = () => { setRightSidebar({ open: true }); return true }
+  const closeRightSidebar = () => { setRightSidebar({ open: false }); return true }
+  const toggleRightSidebar = () => { setRightSidebar({ open: !state.rightSidebar.open }); return true }
+
+  const activateRightTab = (id) => {
+    if (!state.rightSidebar.tabs.some((tab) => tab.id === id)) return false
+    setRightSidebar({ active: id, open: true })
+    return true
+  }
+
+  const closeRightTab = (id) => {
+    if (id === 'guide') return false
+    const tabs = state.rightSidebar.tabs.filter((tab) => tab.id !== id)
+    setRightSidebar({ tabs, active: state.rightSidebar.active === id ? 'guide' : state.rightSidebar.active })
+    return true
+  }
+
+  // Mirrors what the host does when a guide entry is clicked: open a pane tab.
+  const openRightPane = (kind) => {
+    const id = kind === 'terminal' ? 'terminal' : 'files'
+    const title = id === 'terminal' ? 'cmd.exe' : 'Files'
+    const tabs = state.rightSidebar.tabs.some((tab) => tab.id === id)
+      ? state.rightSidebar.tabs
+      : state.rightSidebar.tabs.concat([{ id, title, kind: id }])
+    setRightSidebar({ tabs, active: id, open: true })
+    return true
+  }
+
   const setNotice = (message) => {
     update({ notice: message || null })
   }
@@ -294,6 +328,12 @@ export function createDemoStore() {
     closeSettings: () => update({ settingsOpen: false }),
     openWorkspace: () => update({ workspaceOpen: true, settingsOpen: false }),
     closeWorkspace: () => update({ workspaceOpen: false }),
+    openRightSidebar,
+    closeRightSidebar,
+    toggleRightSidebar,
+    activateRightTab,
+    closeRightTab,
+    openRightPane,
     setPreset: (label) => update({ preset: String(label || '') }),
     setLocale: (id) => update({ locale: String(id || 'en') })
   }

@@ -10,6 +10,8 @@ English | [简体中文](README.zh-CN.md)
 
 ![Session](docs/preview-session.png)
 
+![Right sidebar](docs/preview-sidebar.png)
+
 ![Settings](docs/preview-settings.png)
 
 ## Install
@@ -27,7 +29,8 @@ Restart `dsh web` and refresh the page. Later skin updates only need a refresh.
 
 - **Top nav** — Front Page, New Session, Popular, Workspaces, Favorites, Settings.
 - **Front Page** — filter by category, search sessions, switch between a table and thumbnails. Compact / Extended rows include Rename / Fork / Archive.
-- **Session view** — conversation content stays native. Use the skin search dock (Search / Clear, plus Model, Access, Agent, Effort, Commands, Files) or keep the native composer.
+- **Session view** — conversation content stays native. Use the skin search dock (Search / Clear, plus Model, Access, Agent, Effort, Commands, Files) or keep the native composer. Two further chips, **Workspace files** and **New terminal**, open the matching native right-sidebar pane on demand; they are only rendered on hosts that ship that sidebar.
+- **Right sidebar** — the native guide panel (`开始`), dockkit tab strip, files tree, and terminal frame get the same charcoal treatment as the rest of the skin.
 - **Favorites** — tap the heart on a row; Favorites shows only starred sessions.
 
 ## Settings
@@ -37,6 +40,7 @@ Labels follow the host interface language (`zh` / `en`).
 
 - **Enable gallery skin / System appearance** — master switch. Off restores the DSH look you had before.
 - **Native sidebar** — whether the session page shows the left session list. When hidden, open sessions from Front Page.
+- **Native right sidebar** — on by default. Off hides the sidebar's opener, so the empty `开始` panel never opens on its own.
 - **Composer** — skin composer or native composer; one at a time.
 - **Front Page display mode** — how the session list is laid out. The Front Page footer dropdown changes the same setting.
 
@@ -66,12 +70,12 @@ npm run preview    # build:demo + serve http://127.0.0.1:4173/
 npm run capture    # screenshot Front Page / session / Settings into docs/preview*.png
 npm test           # build + check + L1 + demo
 npm run test:compat  # L2: probe published DSH packages (pin + latest)
-npm run test:compat:all  # L1 + L2 every published @deepseek-ai/dsh version; writes the matrix
+npm run test:compat:all  # L1 + L2 every published @deepseek-ai/dsh version; writes docs/COMPATIBILITY.md
 npm run test:e2e     # L3: isolated DSH_HOME + Playwright against 0.1.0-rc.6
 npm pack --dry-run # release-view gate
 ```
 
-The static demo reuses `src/client.js` and `src/skin.css`. `demo-src/` is only a fake DSH host, fixtures, and a stand-in conversation pane; `npm run build:demo` writes the static site to `demo/` (Vercel output directory). Search, settings, and session chrome stay local; nothing calls DeepSeek Harness, an agent, or a model API. Hosted copy: [dshentai-demo.arkady14.site](https://dshentai-demo.arkady14.site).
+The static demo reuses `src/client.js` and `src/skin.css`. `demo-src/` is only a fake DSH host, fixtures, a stand-in conversation pane, and a fake right sidebar (guide panel, files tree, terminal) so the sidebar skin is previewable; `npm run build:demo` writes the static site to `demo/` (Vercel output directory). Search, settings, and session chrome stay local; nothing calls DeepSeek Harness, an agent, or a model API. Hosted copy: [dshentai-demo.arkady14.site](https://dshentai-demo.arkady14.site).
 
 
 ## Layout
@@ -89,7 +93,7 @@ The static demo reuses `src/client.js` and `src/skin.css`. `demo-src/` is only a
 
 ## Notes
 
-Browser-only plugin; it does not edit DSH files. Sessions, replies, and settings still belong to DeepSeek Harness — this skin only replaces the chrome. Preferences stay in the local browser. Install floor is DSH `0.0.1-rc.5` (first `shell.overlay` host); later harness versions including current `0.1.x-rc` builds are allowed. Tested pin is `0.1.0-rc.6`. See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+Browser-only plugin; it does not edit DSH files. Sessions, replies, and settings still belong to DeepSeek Harness — this skin only replaces the chrome. Preferences stay in the local browser. Install floor is DSH `0.0.1-rc.5` (first `shell.overlay` host); later harness versions including current `0.1.x-rc` builds are allowed. Tested pin is `0.1.0-rc.6`; the newest version verified is `0.1.7-rc.1`. See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
 ## License
 

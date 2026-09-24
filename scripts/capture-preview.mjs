@@ -10,7 +10,8 @@ const url = process.env.DEMO_URL || 'http://127.0.0.1:4173/'
 const shots = {
   session: resolve(root, 'docs/preview-session.png'),
   index: resolve(root, 'docs/preview.png'),
-  settings: resolve(root, 'docs/preview-settings.png')
+  settings: resolve(root, 'docs/preview-settings.png'),
+  sidebar: resolve(root, 'docs/preview-sidebar.png')
 }
 
 const hideDemoBanner = `
@@ -37,6 +38,18 @@ await page.locator('.dshDemo_thread').waitFor({ state: 'visible' })
 await page.waitForTimeout(400)
 await page.screenshot({ path: shots.session, type: 'png' })
 console.log(`wrote ${shots.session}`)
+
+// Right sidebar: the composer chips open the native panes, so drive one and
+// then return to the guide (Start) tab for the shot. Close it again so the
+// remaining screenshots keep their single-column look.
+await page.locator('.dsh-ex-links button').filter({ hasText: /^Workspace files$/ }).first().click()
+await page.locator('[data-sidebar-right-panel][data-sidebar-right-open="true"]').waitFor({ state: 'visible' })
+await page.locator('[data-dockkit-tab]').first().click()
+await page.waitForTimeout(400)
+await page.screenshot({ path: shots.sidebar, type: 'png' })
+console.log(`wrote ${shots.sidebar}`)
+await page.locator('[data-sidebar-right-toggle]').click()
+await page.waitForTimeout(300)
 
 await page.locator('.dsh-ex-nb').getByRole('button', { name: 'Front Page', exact: true }).click()
 await page.locator('.dsh-ex-ido').waitFor({ state: 'visible' })

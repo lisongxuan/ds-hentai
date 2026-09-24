@@ -92,14 +92,25 @@ function isNotFound(result) {
   return /404|E404|No matching version|not in this registry/i.test(`${result.stderr}\n${result.stdout}`)
 }
 
+/**
+ * A client package that a newer harness added (or an older one never published)
+ * is absent for that version, not a probe failure. `npm pack --silent` reports
+ * nothing on 404, so confirm with an explicit `npm view` before giving up.
+ */
+async function isUnpublished(name, version, result) {
+  if (isNotFound(result)) return true
+  const probe = await run('npm', ['view', `${name}@${version}`, 'version'])
+  return probe.code !== 0 && isNotFound(probe)
+}
+
 export async function packExtract(name, version, parent) {
   const dest = await mkdtemp(join(parent, 'pkg-'))
   const spec = `${name}@${version}`
-  const packed = await run('npm', ['pack', spec, '--pack-destination', dest, '--silent'])
+  const packed = await run('npm', ['pack', spec, '--pack-destination', dest])
   if (packed.code !== 0) {
     const err = new Error(`npm pack failed for ${spec}: ${packed.stderr || packed.stdout}`)
     err.offline = isOffline(packed)
-    err.notFound = isNotFound(packed)
+    err.notFound = await isUnpublished(name, version, packed)
     throw err
   }
   const files = (await readdir(dest)).filter((item) => item.endsWith('.tgz'))
@@ -130,7 +141,9 @@ function pkgHasStableNeedles(pkg) {
 export function summarizeProbe(hostRow) {
   const overlay = needleHit(hostRow, 'shell.overlay')
   const locale = needleHit(hostRow, 'locale/change')
-  const stableNeedles = allNeedles(hostRow).filter((item) => item.layer === 'stable')
+  // A needle that lives in a package this host version does not ship is not a
+  // broken hook — it is not applicable — so it must not gate the host.
+  const stableNeedles = allNeedles(hostRow).filter((item) => item.layer === 'stable' && !item.skipped)
   const stable = stableNeedles.length > 0 && stableNeedles.every((item) => item.hit)
   const cssMatches = ((hostRow.css || [])[0] || {}).matches || []
   const cssHit = cssMatches.filter((item) => item.hit).length
@@ -164,7 +177,7 @@ export function summarizeProbe(hostRow) {
     cssTotal,
     support,
     l1Face,
-    missing: allNeedles(hostRow).filter((item) => !item.hit).map((item) => item.id)
+    missing: allNeedles(hostRow).filter((item) => !item.hit && !item.skipped).map((item) => item.id)
   }
 }
 
@@ -210,7 +223,8 @@ export async function probeVersion(catalog, version, work) {
             id: needle.id,
             layer: needle.layer,
             pattern: needle.pattern,
-            hit: false
+            hit: false,
+            skipped: true
           }))
         })
         continue
@@ -240,6 +254,7 @@ export async function probeHosts(catalog, hosts) {
         row.requested = requested
         report.hosts.push(row)
         for (const match of allNeedles(row)) {
+          if (match.skipped) continue
           const label = `${row.id} @ ${version} ${match.id}`
           if (!match.hit && match.layer === 'stable') failures.push(`${label}: stable needle missing`)
           if (!match.hit && match.layer === 'best-effort') warnings.push(`${label}: best-effort needle missing`)

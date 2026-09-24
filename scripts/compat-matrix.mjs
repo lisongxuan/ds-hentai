@@ -107,13 +107,6 @@ function upsertMarkdown(source, block) {
   return `${source.trimEnd()}\n\n${block}\n`
 }
 
-async function writePackage(matrix) {
-  const packagePath = join(root, 'package.json')
-  const pkg = JSON.parse(await readFile(packagePath, 'utf8'))
-  pkg.dshCompatibility = matrix
-  await writeFile(packagePath, `${JSON.stringify(pkg, null, 2)}\n`)
-}
-
 async function writeCompatDoc(matrix) {
   const docPath = join(root, 'docs/COMPATIBILITY.md')
   const source = await readFile(docPath, 'utf8')
@@ -180,9 +173,8 @@ async function main() {
     console.log(JSON.stringify(matrix, null, 2))
   }
   if (args.write) {
-    await writePackage(matrix)
     await writeCompatDoc(matrix)
-    console.error(`wrote ${rows.length} DSH versions to package.json#dshCompatibility and docs/COMPATIBILITY.md`)
+    console.error(`wrote ${rows.length} DSH versions to docs/COMPATIBILITY.md`)
   }
   if (!l1.ok) process.exit(1)
 }

@@ -10,6 +10,7 @@ const MODEL_KEY = 'ds-hentai:model';
 const REGION_KEY = 'ds-hentai:region';
 const CATS_KEY = 'ds-hentai:cats';
 const SIDEBAR_KEY = 'ds-hentai:native-sidebar';
+const RIGHT_SIDEBAR_KEY = 'ds-hentai:native-right-sidebar';
 const COMPOSER_KEY = 'ds-hentai:composer';
 const BUILTIN_THEMES = new Set(['light', 'dark', 'system']);
 const COMPOSER_MODES = Object.freeze(['skin', 'native']);
@@ -86,6 +87,11 @@ const SETTINGS_ZH = Object.freeze({
   'sidebar.hint': '在 Chat / Trajectory 旁显示原生会话侧边栏。',
   'sidebar.show': '显示',
   'sidebar.hide': '隐藏',
+  'rightbar.title': '原生右侧边栏',
+  'rightbar.desc': '显示 DSH 右侧边栏（工作区文件 / 新建终端所在面板）。默认显示；输入框旁的 Workspace files / New terminal 按钮也能按需直接打开某个面板。',
+  'rightbar.hint': '默认显示；关闭后隐藏原生入口，只保留按需打开面板的按钮。',
+  'rightbar.show': '显示',
+  'rightbar.hide': '隐藏',
   'composer.title': '对话输入框',
   'composer.desc': '皮肤搜索坞与原生输入卡二选一；选原生时不显示皮肤输入框。',
   'composer.hint': '只显示一种输入框，另一种会隐藏。',
@@ -137,6 +143,11 @@ const SETTINGS_EN = Object.freeze({
   'sidebar.hint': 'Show the native session sidebar next to Chat / Trajectory.',
   'sidebar.show': 'Show',
   'sidebar.hide': 'Hide',
+  'rightbar.title': 'Native right sidebar',
+  'rightbar.desc': 'Show the DSH right sidebar (the workspace files / terminal panes). On by default; the Workspace files and New terminal buttons next to the composer can also open a pane directly.',
+  'rightbar.hint': 'Shown by default. Turning it off hides the native entry point and keeps only the on-demand pane buttons.',
+  'rightbar.show': 'Show',
+  'rightbar.hide': 'Hide',
   'composer.title': 'Composer',
   'composer.desc': 'Choose the skin search dock or the native composer. The other is hidden.',
   'composer.hint': 'Choose one composer. The other is hidden.',
@@ -249,6 +260,10 @@ const THEME = Object.freeze({
     '--dsw-alias-brand-primary': '#f1f1f1',
     '--dsw-alias-brand-primary-invert': '#34353b',
     '--dsw-alias-brand-text': '#dddddd',
+    // DSH's browser pane asks for this malformed name (a template artifact in
+    // the host bundle); defining it keeps that toolbar accent on-palette, and
+    // is inert if the host later fixes the name.
+    '--dsw-alias-brand-primary-new-colorprimary-new-color': '#f1f1f1',
     '--dsw-alias-button-contrast-fill': '#34353b',
     '--dsw-alias-button-elevated-fill': '#4f535b',
     '--dsw-alias-button-floating-fill': '#4f535b',
@@ -276,6 +291,7 @@ const THEME = Object.freeze({
     '--dsw-alias-label-primary-foreground': '#34353b',
     '--dsw-alias-label-primary-inverted': '#34353b',
     '--dsw-alias-label-primary': '#f1f1f1',
+    '--dsw-alias-label-quaternary': '#8f8f8f',
     '--dsw-alias-label-secondary': '#b8b8b8',
     '--dsw-alias-label-tertiary': '#9a9a9a',
     '--dsw-alias-markdown-citation': '#4f535b',
@@ -301,6 +317,9 @@ const THEME = Object.freeze({
     '--dsw-alias-state-warn-primary': '#d38f1d',
     '--dsw-alias-state-warn-secondary': '#db6c24',
     '--dsw-alias-state-warn-tertiary': 'rgba(211,143,29,0.12)',
+    // The browser pane spells this "warning" rather than the "warn" family
+    // above; both names must resolve to the same skin colour.
+    '--dsw-alias-state-warning-primary': '#d38f1d',
     '--dsw-alias-toast-bg': '#4f535b',
     '--dsw-alias-tooltip-bg': '#ffffe1',
     '--dsw-tooltip-ink': '#1f1f1f',
@@ -404,6 +423,17 @@ function readCats() {
 function writeCats(ids) { writeJson(CATS_KEY, ids); }
 function readNativeSidebar() { return readFlag(SIDEBAR_KEY, false); }
 function writeNativeSidebar(enabled) { writeFlag(SIDEBAR_KEY, enabled); }
+// The right sidebar (工作区文件 / 新建终端 panes) is shown by default, matching DSH.
+// Turning it off hides the sidebar's only DSH-shipped entry point: DSH keeps an
+// empty panel element in the DOM even while the sidebar is closed, so a hidden
+// sidebar must never look like a stray box. Read from storage on every mark so
+// the attribute can never drift from the persisted setting.
+function readNativeRightSidebar() { return readFlag(RIGHT_SIDEBAR_KEY, true); }
+function writeNativeRightSidebar(enabled) { writeFlag(RIGHT_SIDEBAR_KEY, enabled); }
+function markRightSidebarFlag() {
+  if (!document.body) return;
+  document.body.setAttribute('data-dsh-exhentai-right-sidebar', readNativeRightSidebar() ? 'on' : 'off');
+}
 function readComposerMode() {
   try {
     const value = window.localStorage.getItem(COMPOSER_KEY);
@@ -420,6 +450,7 @@ function markChromeFlags(sidebarOn, composerMode) {
   if (!document.body) return;
   document.body.setAttribute('data-dsh-exhentai-sidebar', sidebarOn ? 'on' : 'off');
   document.body.setAttribute('data-dsh-exhentai-composer', COMPOSER_MODES.includes(composerMode) ? composerMode : 'skin');
+  markRightSidebarFlag();
 }
 
 function h(type, props) {
@@ -1013,6 +1044,59 @@ function createNativeBridge(ctx) {
   const openSearch = () => clickNamed(['search sessions', 'search sessions...'], { exact: true })
     || clickNamed(['search sessions']);
   const openCommands = () => clickNamed(['commands', 'command', '命令'], { exact: true });
+  // The guide entries (工作区文件 / 新建终端) live in the right sidebar, which the
+  // skin hides by default, so a composer chip opens the sidebar first and then
+  // clicks the entry the host rendered. The entry exposes no aria-label of its
+  // own (its accessible name is "title + description"), so it is matched on its
+  // data hook instead of through clickNamed.
+  const rightPaneEntry = (kind) => document.querySelector(`[data-sidebar-right-guide-entry="${kind}"]`);
+  const rightSidebarOpener = () => Array.prototype.slice
+    .call(document.querySelectorAll('button, [role="button"]'))
+    .find((node) => /打开右侧边栏|open right sidebar/i.test(node.getAttribute('aria-label') || ''));
+  const openRightPane = (kind) => {
+    if (!kind) return false;
+    const clickEntry = () => {
+      const entry = rightPaneEntry(kind);
+      if (!entry) return false;
+      // The hook sits on each entry's outermost node: a <button> for the files
+      // entry, but a wrapper <div> for the terminal one, whose handler lives on
+      // an inner button (a click does not bubble downwards).
+      const target = entry.matches('button, a, [role="button"]')
+        ? entry
+        : entry.querySelector('button, a, [role="button"]');
+      if (!target) return false;
+      target.click();
+      return true;
+    };
+    if (clickEntry()) return true;
+    const opener = rightSidebarOpener();
+    if (opener) opener.click();
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      tries += 1;
+      if (clickEntry() || tries > 30) {
+        window.clearInterval(timer);
+        return;
+      }
+      // A sidebar reopened with other tabs active shows no guide, so fall back
+      // to the strip's new-tab button, which lands on the guide.
+      if (tries === 12) {
+        const addTab = document.querySelector('[data-dockkit-add-tab]');
+        if (addTab) addTab.click();
+      }
+    }, 60);
+    return Boolean(opener);
+  };
+  // Whether this host ships the right sidebar at all. Versions before the
+  // sidebar landed (and hosts that never declare the slot) leave no panel
+  // element, no guide entry, and no opener, so the composer chips would render
+  // as buttons that do nothing. The panel element stays mounted even while the
+  // sidebar is closed, so its presence is the reliable signal.
+  const hostHasRightPane = () => Boolean(
+    document.querySelector('[data-sidebar-right-panel]')
+    || document.querySelector('[data-sidebar-right-guide-entry]')
+    || rightSidebarOpener()
+  );
   const sendPlain = (text, sessionId) => {
     const trimmed = String(text || '');
     if (!trimmed) return false;
@@ -1392,7 +1476,7 @@ function createNativeBridge(ctx) {
   };
   return {
     readConnection, selectSession, startSession, openSettings, closeSettings, openWorkspace,
-    openSearch, openCommands, sendPrompt, attachFiles, openModelPicker, listSessions,
+    openSearch, openCommands, openRightPane, hostHasRightPane, sendPrompt, attachFiles, openModelPicker, listSessions,
     renameSession, forkSession, archiveSession, listWorkspaces, listModels, selectModel,
     readPermissions, setPermission, listDraftFiles, runCommand, openSessionLog,
     readPreset, listPresets, selectPreset, readSessionStats,
@@ -1433,6 +1517,7 @@ function SettingsRow({
   const [chips, setLocalChips] = React.useState(getChips());
   const [mode, setLocalMode] = React.useState(getMode());
   const [nativeSidebar, setLocalSidebar] = React.useState(typeof getNativeSidebar === 'function' ? getNativeSidebar() : false);
+  const [nativeRightBar, setLocalRightBar] = React.useState(readNativeRightSidebar());
   const [composerMode, setLocalComposer] = React.useState(typeof getComposerMode === 'function' ? getComposerMode() : 'skin');
   const [, setLocaleRev] = React.useState(0);
   React.useEffect(() => subscribe(setLocalEnabled), [subscribe]);
@@ -1507,6 +1592,26 @@ function SettingsRow({
           'aria-pressed': !nativeSidebar,
           onClick: () => { if (setNativeSidebar) setNativeSidebar(false); setLocalSidebar(false); }
         }, t('sidebar.hide'))
+      )
+    ),
+    h('div', { style: rowStyle },
+      h('div', { style: { minWidth: 0 } },
+        h('div', { style: { color: 'var(--dsw-alias-label-primary)', fontWeight: 600 } }, t('rightbar.title')),
+        h('div', { style: copyStyle }, t('rightbar.desc'))
+      ),
+      h('div', { style: { display: 'flex', gap: '8px', flexShrink: 0 } },
+        h('button', {
+          type: 'button',
+          style: buttonStyle(nativeRightBar),
+          'aria-pressed': nativeRightBar,
+          onClick: () => { writeNativeRightSidebar(true); markRightSidebarFlag(); setLocalRightBar(true); }
+        }, t('rightbar.show')),
+        h('button', {
+          type: 'button',
+          style: buttonStyle(!nativeRightBar),
+          'aria-pressed': !nativeRightBar,
+          onClick: () => { writeNativeRightSidebar(false); markRightSidebarFlag(); setLocalRightBar(false); }
+        }, t('rightbar.hide'))
       )
     ),
     h('div', { style: rowStyle },
@@ -1955,6 +2060,7 @@ function SettingsPane({
   const t = typeof tProp === 'function' ? tProp : fallbackT;
   const locales = typeof native.listLocales === 'function' ? native.listLocales() : [];
   const [localeId, setLocaleId] = React.useState(() => (typeof native.readLocale === 'function' ? native.readLocale() : ''));
+  const [nativeRightBar, setLocalRightBar] = React.useState(readNativeRightSidebar());
   React.useEffect(() => {
     if (typeof native.readLocale !== 'function') return undefined;
     setLocaleId(native.readLocale() || '');
@@ -2013,6 +2119,22 @@ function SettingsPane({
             { id: 'hide', label: t('sidebar.hide') }
           ],
           onChange: (id) => setNativeSidebar(id === 'show')
+        })
+      ),
+      h('div', { className: 'dsh-ex-optouter' },
+        h('p', null, t('rightbar.hint')),
+        h(OptRadios, {
+          name: 'dsh-ex-rightbar',
+          value: nativeRightBar ? 'show' : 'hide',
+          options: [
+            { id: 'show', label: t('rightbar.show') },
+            { id: 'hide', label: t('rightbar.hide') }
+          ],
+          onChange: (id) => {
+            writeNativeRightSidebar(id === 'show');
+            markRightSidebarFlag();
+            setLocalRightBar(id === 'show');
+          }
         })
       ),
       h('div', { className: 'dsh-ex-optouter' },
@@ -2130,6 +2252,28 @@ function ComposerDock({
   modelDir, onSelectModel, onSelectEffort, permState, onSelectPerm,
   fileNote, onFileNote, draftFiles, onDraftFiles, presetLabel
 }) {
+  // The two right-pane chips only make sense on a host that ships the right
+  // sidebar. The panel mounts with the host shell, which can land slightly after
+  // the overlay does, so re-check for a while before giving up on them.
+  const [rightPane, setRightPane] = React.useState(() => {
+    try { return Boolean(native.hostHasRightPane && native.hostHasRightPane()); } catch { return false; }
+  });
+  React.useEffect(() => {
+    if (rightPane) return undefined;
+    const timer = window.setInterval(() => {
+      let live = false;
+      try { live = Boolean(native.hostHasRightPane && native.hostHasRightPane()); } catch {}
+      if (live) {
+        window.clearInterval(timer);
+        setRightPane(true);
+      }
+    }, 1000);
+    const stop = window.setTimeout(() => window.clearInterval(timer), 20000);
+    return () => {
+      window.clearInterval(timer);
+      window.clearTimeout(stop);
+    };
+  }, [rightPane, native]);
   const send = () => {
     if (native.sendPrompt(query, sessionId)) {
       setQuery('');
@@ -2182,7 +2326,11 @@ function ComposerDock({
           { id: 'files', label: optionLinkLabel(openOpt, 'files', 'Files', (draftFiles || []).length ? `${draftFiles.length} queued` : ''), onClick: () => toggle('files') },
           { id: 'agent', label: optionLinkLabel(openOpt, 'agent', 'Agent', presetLabel), onClick: () => toggle('agent') },
           { id: 'effort', label: optionLinkLabel(openOpt, 'effort', 'Effort', effort), onClick: () => toggle('effort') },
-          { id: 'commands', label: optionLinkLabel(openOpt, 'commands', 'Commands', ''), onClick: () => toggle('commands') }
+          { id: 'commands', label: optionLinkLabel(openOpt, 'commands', 'Commands', ''), onClick: () => toggle('commands') },
+          ...(rightPane ? [
+            { id: 'wsfiles', label: 'Workspace files', onClick: () => native.openRightPane('files') },
+            { id: 'terminal', label: 'New terminal', onClick: () => native.openRightPane('terminal') }
+          ] : [])
         ]
       })
     ),
@@ -2224,6 +2372,8 @@ function ChromeShell(props) {
     openModelPicker: () => false,
     openSearch: () => false,
     openCommands: () => false,
+    openRightPane: () => false,
+    hostHasRightPane: () => false,
     listSessions: readDomSessions,
     renameSession: async () => false,
     forkSession: async () => null,

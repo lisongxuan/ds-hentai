@@ -5,7 +5,8 @@
 - DeepSeek Harness from `0.0.1-rc.5` (first `shell.overlay` gallery host)
   onward, with no upper bound. Later 0.1.x / 0.2.x / 1.x installs are
   allowed; later UI drift is fixed when it shows up. Tested pin remains
-  `0.1.0-rc.6`; latest scanned is `0.1.1-rc.2`. `0.0.1-rc.1` / `0.0.1-rc.2`
+  `0.1.0-rc.6`; latest scanned is `0.1.7-rc.1` (`next`), while the `latest`
+  dist-tag still resolves to `0.1.5-rc.3`. `0.0.1-rc.1` / `0.0.1-rc.2`
   still load as tokens + settings but are outside the install range.
 - The npm `peerDependencies` string is a `||` chain of prerelease branches
   (one `major.minor.patch` tuple each). A single `>=0.0.1-rc.5` does **not**
@@ -108,10 +109,12 @@ dsh web
 
 ## Published DSH matrix
 
-Scanned `@deepseek-ai/dsh` on 2026-08-28T06:18:04.515Z (plugin `0.6.0`).
+Scanned `@deepseek-ai/dsh` on 2026-08-28T06:18:04.515Z (plugin `0.6.0`); the
+`0.1.5-rc.3` and later rows were added by hand from `npm run test:compat` and
+`npm run test:e2e --version 0.1.7-rc.1` runs (plugin `0.7.0`).
 L2 packs the matching `@deepseek-ai/dsh-client-*` packages for each CLI version.
 L1 runs the plugin against the capability face inferred from that L2 result (same fixtures as `npm run test:l1`).
-Regenerate with `npm run test:compat:all`.
+Regenerate with `npm run test:compat:all`, which rewrites this file only.
 
 | DSH | Support | L1 face | L1 | L2 stable | Overlay | Locale | CSS adapters |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -125,6 +128,18 @@ Regenerate with `npm run test:compat:all`.
 | `0.1.0-rc.8` | gallery | full-rc6 | pass | pass | yes | yes | 7/7 |
 | `0.1.1-rc.1` | gallery | full-rc6 | pass | pass | yes | yes | 7/7 |
 | `0.1.1-rc.2` | gallery | full-rc6 | pass | pass | yes | yes | 7/7 |
+| `0.1.5-rc.3` | gallery | full-rc6 | pass | pass | yes | yes | 7/7 |
+| `0.1.6-alpha.2` | gallery | full-rc6 | pass | pass | yes | yes | 7/7 |
+| `0.1.7-alpha.2` | gallery | full-rc6 | pass | pass | yes | yes | 7/7 |
+| `0.1.7-rc.1` | gallery | full-rc6 | pass | pass | yes | yes | 7/7 |
+
+Versions published after that scan and not listed above (`0.1.2-alpha.2` through
+`0.1.2-alpha.5`, `0.1.2-rc.1`, `0.1.3-alpha.2`, `0.1.5-alpha.1`, `0.1.5-alpha.2`,
+`0.1.5-rc.1`, `0.1.5-rc.2`, `0.1.6-alpha.1`, `0.1.7-alpha.1`) have no row yet; a
+full `npm run test:compat:all` fills them in. `0.1.7-rc.1` loads the same 57
+client bundles as `0.1.7-alpha.2`, so the right-sidebar coverage added for
+`0.1.6`+ (`data-sidebar-right-*`, `data-dockkit-*`, `data-files-*`) applies
+unchanged.
 
 - **gallery** — stable APIs + `shell.overlay`; gallery chrome is expected.
 - **tokens + settings** — stable APIs present, no `shell.overlay`; plugin must keep the palette and General switch.
@@ -142,7 +157,7 @@ best-effort probes warn (or assert a clean degrade) and do not block a PR.
 | ----- | ------- | -------------- |
 | L1 | `npm test` (includes `npm run test:l1`) | jsdom + mock Cordis faces: `full-rc6`, `no-overlay`, `no-locale`, `no-sessions`. Theme register, General row, overlay try/catch, markers, dispose. |
 | L2 | `npm run test:compat` | Resolve pin/`latest` from `@deepseek-ai/dsh`, then `npm pack` matching `@deepseek-ai/dsh-client-*` packages. Stable strings must remain; CSS-module suffixes (`_sessionRow`, `_bubble`, …) and `shell.overlay` warn if missing. Offline local runs skip instead of failing; CI does not. |
-| L1+L2 matrix | `npm run test:compat:all` | Every published `@deepseek-ai/dsh` version. Writes `package.json#dshCompatibility` and the matrix in this file. |
+| L1+L2 matrix | `npm run test:compat:all` | Every published `@deepseek-ai/dsh` version. Writes the matrix in this file; it never touches `package.json` (the field `dshCompatibility` was removed in `0.7.0`). |
 | L3 | `npm run test:e2e` | Temporary `DSH_HOME`, `npx @deepseek-ai/dsh@<ver> plugin --profile web add ./ds-hentai-*.tgz`, `dsh web --no-open --host 127.0.0.1`, Playwright smoke. Nightly / `workflow_dispatch` in `.github/workflows/compat-e2e.yml`. |
 
 L3 binds only to loopback and deletes the temporary home unless `DSH_E2E_KEEP_HOME=1`. It does not need a live LLM. Point at an already running GUI with `--url http://127.0.0.1:3080`.

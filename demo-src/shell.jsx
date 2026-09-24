@@ -6,6 +6,233 @@ function rowClass(session, currentId) {
   return session.id === currentId ? 'dshDemo_sessionRow dshDemo_selected' : 'dshDemo_sessionRow'
 }
 
+// --- Fake right sidebar (DSH's dockkit surface) ---------------------------
+// Mirrors the real host's semantic contract so the skin's right-sidebar CSS
+// has something to style: data-sidebar-right-panel / -guide / -guide-entry,
+// the dockkit tab strip, and the files / terminal panes. The panel element
+// stays mounted when closed (only [data-sidebar-right-open] goes away), which
+// is what makes the skin's open-state gating observable here.
+
+const FILE_ROWS = [
+  { kind: 'dir', name: 'src', size: '' },
+  { kind: 'dir', name: 'test', size: '' },
+  { kind: 'file', name: 'README.md', size: '3.1 kB' },
+  { kind: 'file', name: 'package.json', size: '1.9 kB' },
+  { kind: 'file', name: 'skin.css', size: '49.2 kB' }
+]
+
+const TERMINAL_LINES = [
+  'Microsoft Windows [Version 10.0.26100.3476]',
+  '(c) Microsoft Corporation. All rights reserved.',
+  '',
+  'D:\\demo\\playground> dir',
+  ' Directory of D:\\demo\\playground',
+  '',
+  '08/28/2026  09:14 AM    <DIR>          src',
+  '08/28/2026  09:14 AM             3,172 README.md',
+  '08/28/2026  09:14 AM             1,940 package.json',
+  'D:\\demo\\playground> _'
+]
+
+function entryIcon(kind) {
+  const base = {
+    className: 'dshDemo_entryIcon',
+    viewBox: '0 0 24 24',
+    width: 22,
+    height: 22,
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 1.6,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': 'true'
+  }
+  if (kind === 'terminal') {
+    return React.createElement('svg', base,
+      React.createElement('path', { d: 'M5 8l4 4-4 4' }),
+      React.createElement('path', { d: 'M12 16h7' })
+    )
+  }
+  return React.createElement('svg', base,
+    React.createElement('path', { d: 'M4 6h6l2 2h8v10H4z' }),
+    React.createElement('path', { d: 'M4 10h16' })
+  )
+}
+
+function guidePane(store) {
+  return React.createElement('section', {
+    className: 'dshDemo_pane',
+    'data-dockkit-pane': 'push',
+    'data-dockkit-pane-active': 'true'
+  },
+    React.createElement('div', { className: 'dshDemo_guide', 'data-sidebar-right-guide': 'true' },
+      React.createElement('span', { className: 'dshDemo_hero' }, 'Get started'),
+      React.createElement('div', { className: 'dshDemo_entryCell' },
+        React.createElement('button', {
+          type: 'button',
+          className: 'dshDemo_entry',
+          'data-sidebar-right-guide-entry': 'files',
+          onClick: () => store.openRightPane('files')
+        },
+          entryIcon('files'),
+          React.createElement('span', { className: 'dshDemo_entryText' },
+            React.createElement('span', { className: 'dshDemo_entryTitle' }, 'Workspace files'),
+            React.createElement('span', { className: 'dshDemo_entryDescription' }, 'Browse files in the session workspace')
+          )
+        )
+      ),
+      React.createElement('div', { className: 'dshDemo_entryCell' },
+        React.createElement('div', {
+          className: 'dshDemo_entry dshDemo_entryWide',
+          'data-sidebar-right-guide-entry': 'terminal'
+        },
+          React.createElement('button', {
+            type: 'button',
+            className: 'dshDemo_entryMain',
+            onClick: () => store.openRightPane('terminal')
+          },
+            entryIcon('terminal'),
+            React.createElement('span', { className: 'dshDemo_text' },
+              React.createElement('span', { className: 'dshDemo_title' }, 'New terminal'),
+              React.createElement('span', { className: 'dshDemo_description' }, 'Run commands in the session workspace')
+            )
+          ),
+          React.createElement('button', {
+            type: 'button',
+            className: 'dshDemo_entryTrigger',
+            'aria-label': 'Terminal options',
+            onClick: () => store.setNotice('Demo: terminal options are not available.')
+          }, '⌄')
+        )
+      )
+    )
+  )
+}
+
+function filesPane(store) {
+  return React.createElement('section', {
+    className: 'dshDemo_pane',
+    'data-dockkit-pane': 'push',
+    'data-dockkit-pane-active': 'true'
+  },
+    React.createElement('div', { className: 'dshDemo_files', 'data-files-state': 'ready' },
+      React.createElement('div', { className: 'dshDemo_filesBand' },
+        React.createElement('span', { className: 'dshDemo_filesPath', 'data-files-path': 'true' }, 'D:\\demo\\playground'),
+        React.createElement('button', {
+          type: 'button',
+          className: 'dshDemo_iconBtn',
+          'data-files-reload': 'true',
+          'aria-label': 'Reload',
+          onClick: () => store.setNotice('Demo: reload is a no-op in the static preview.')
+        }, '⟳')
+      ),
+      React.createElement('div', { className: 'dshDemo_filesBody', 'data-files-body': 'true' },
+        FILE_ROWS.map((row) => React.createElement('div', {
+          key: row.name,
+          className: 'dshDemo_filesRow',
+          'data-files-row': row.name
+        },
+          React.createElement('span', { className: 'dshDemo_filesEntry', 'data-files-entry': row.name },
+            row.kind === 'dir' ? `${row.name}\\` : row.name),
+          React.createElement('span', { className: 'dshDemo_filesSize' }, row.size)
+        ))
+      ),
+      React.createElement('code', { className: 'dshDemo_filesCode', 'data-files-code': 'true' },
+        'Static preview: no filesystem access.')
+    )
+  )
+}
+
+function terminalPane() {
+  return React.createElement('section', {
+    className: 'dshDemo_pane',
+    'data-dockkit-pane': 'push',
+    'data-dockkit-pane-active': 'true'
+  },
+    React.createElement('div', { className: 'dshDemo_terminal', 'data-sidebar-terminal': 'true' },
+      React.createElement('div', { className: 'dshDemo_screen' },
+        TERMINAL_LINES.map((line, index) => React.createElement('div', { key: index }, line || '\u00a0'))
+      )
+    )
+  )
+}
+
+function DemoRightSidebar({ state, store }) {
+  const bar = state.rightSidebar
+  const tabs = bar.tabs
+  const activeTab = tabs.find((tab) => tab.id === bar.active) || tabs[0]
+  const attrs = {
+    className: 'dshDemo_rightSidebar',
+    'data-sidebar-right-panel': 'push',
+    'data-sidebar-right-region-nudge': 'true'
+  }
+  if (bar.open) attrs['data-sidebar-right-open'] = 'true'
+
+  return React.createElement('aside', attrs,
+    bar.open
+      ? React.createElement('div', {
+        className: 'dshDemo_dockkitSurface',
+        'data-dockkit-surface': 'push',
+        'data-dockkit-host': 'dock',
+        'data-dockkit-column': 'right'
+      },
+        React.createElement('header', { className: 'dshDemo_strip', 'data-dockkit-strip': 'true' },
+          React.createElement('div', { className: 'dshDemo_stripTabs', 'data-dockkit-strip-tabs': 'true' },
+            tabs.map((tab) => React.createElement('div', {
+              key: tab.id,
+              className: tab.id === activeTab.id ? 'dshDemo_tab dshDemo_tabActive' : 'dshDemo_tab',
+              'data-dockkit-tab': tab.id,
+              role: 'tab',
+              'aria-selected': tab.id === activeTab.id ? 'true' : 'false',
+              onClick: () => store.activateRightTab(tab.id)
+            },
+              React.createElement('span', { className: 'dshDemo_tabTitle', 'data-dockkit-tab-title': 'true' }, tab.title),
+              tab.id === 'guide'
+                ? null
+                : React.createElement('button', {
+                  type: 'button',
+                  className: 'dshDemo_tabClose',
+                  'data-dockkit-tab-close': 'true',
+                  'aria-label': `Close ${tab.title}`,
+                  onClick: (event) => {
+                    event.stopPropagation()
+                    store.closeRightTab(tab.id)
+                  }
+                }, '×')
+            ))
+          ),
+          React.createElement('button', {
+            type: 'button',
+            className: 'dshDemo_iconBtn',
+            'data-dockkit-add-tab': 'true',
+            'aria-label': 'New tab',
+            onClick: () => store.activateRightTab('guide')
+          }, '+'),
+          React.createElement('button', {
+            type: 'button',
+            className: 'dshDemo_iconBtn',
+            'data-dockkit-split-button': 'true',
+            'aria-label': 'Split right',
+            onClick: () => store.setNotice('Demo: split panes are not available.')
+          }, '⇋'),
+          React.createElement('span', { className: 'dshDemo_mode', 'data-sidebar-right-mode': 'push' }, 'Push'),
+          React.createElement('button', {
+            type: 'button',
+            className: 'dshDemo_iconBtn',
+            'data-sidebar-right-toggle': 'true',
+            'aria-label': 'Close right sidebar',
+            onClick: () => store.closeRightSidebar()
+          }, '×')
+        ),
+        activeTab.kind === 'files'
+          ? filesPane(store)
+          : (activeTab.kind === 'terminal' ? terminalPane() : guidePane(store))
+      )
+      : null
+  )
+}
+
+
 export function DemoShell({ store }) {
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot)
   const current = state.sessions.find((item) => item.id === state.currentId) || null
@@ -31,7 +258,10 @@ export function DemoShell({ store }) {
   }
 
   return (
-    React.createElement('div', { className: 'dshDemo_frame', id: 'dsh-demo-frame' },
+    React.createElement('div', {
+      className: state.rightSidebar.open ? 'dshDemo_rightOpen dshDemo_frame' : 'dshDemo_frame',
+      id: 'dsh-demo-frame'
+    },
       React.createElement('aside', { className: 'dshDemo_sidebarCol dshDemo_sidebar' },
         React.createElement('div', { className: 'dshDemo_brand dshDemo_rail' },
           React.createElement('strong', null, 'deepseek'),
@@ -111,46 +341,63 @@ export function DemoShell({ store }) {
           : null
       ),
       React.createElement('div', { className: 'dshDemo_handle', 'aria-hidden': 'true' }),
-      React.createElement('main', { className: 'dshDemo_centerCol' },
-        React.createElement('header', { className: 'dshDemo_header' },
-          React.createElement('div', { className: 'dshDemo_titleRow' },
-            React.createElement('span', { className: 'dshDemo_crumb' }, 'Demo'),
-            React.createElement('span', { className: 'dshDemo_crumbSep' }, ' / '),
-            React.createElement('span', { className: 'dshDemo_crumbCurrent' }, current ? current.title : 'No session')
+      current
+        ? React.createElement('main', { className: 'dshDemo_centerCol' },
+          React.createElement('header', { className: 'dshDemo_header' },
+            React.createElement('div', { className: 'dshDemo_titleRow' },
+              React.createElement('span', { className: 'dshDemo_crumb' }, 'Demo'),
+              React.createElement('span', { className: 'dshDemo_crumbSep' }, ' / '),
+              React.createElement('span', { className: 'dshDemo_crumbCurrent' }, current.title)
+            ),
+            React.createElement('div', { className: 'dshDemo_fallbackNav' },
+              React.createElement('button', {
+                type: 'button',
+                className: 'dshDemo_primary',
+                onClick: () => store.openSettings()
+              }, 'Host Settings')
+            ),
+            React.createElement('button', {
+              type: 'button',
+              className: 'dshDemo_iconBtn dshDemo_rightOpener',
+              'aria-label': 'Open right sidebar',
+              'aria-expanded': state.rightSidebar.open ? 'true' : 'false',
+              onClick: () => store.toggleRightSidebar()
+            }, '⌸')
           ),
-          React.createElement('div', { className: 'dshDemo_fallbackNav' },
+          React.createElement('div', { className: 'dshDemo_thread', 'aria-label': 'Conversation' },
+            messages.length === 0
+              ? React.createElement('p', { className: 'dshDemo_dim' }, 'No messages in this session. Use Search on the skin composer, or the native box below.')
+              : messages.map((item, index) => (
+                React.createElement('article', {
+                  key: `${item.role}-${index}`,
+                  className: item.role === 'user' ? 'dshDemo_user_bubble' : 'dshDemo_assistant_bubble'
+                }, item.text)
+              ))
+          ),
+          React.createElement('div', { className: 'dshDemo_composerSeat' },
+            React.createElement('textarea', {
+              ref: composerRef,
+              rows: 3,
+              placeholder: 'Native composer (shown when the skin composer is off)',
+              'aria-label': 'Prompt'
+            }),
             React.createElement('button', {
               type: 'button',
               className: 'dshDemo_primary',
-              onClick: () => store.openSettings()
-            }, 'Host Settings')
+              'aria-label': 'Send',
+              onClick: sendNative
+            }, 'Send')
           )
-        ),
-        React.createElement('div', { className: 'dshDemo_thread', 'aria-label': 'Conversation' },
-          messages.length === 0
-            ? React.createElement('p', { className: 'dshDemo_dim' }, 'No messages in this session. Use Search on the skin composer, or the native box below.')
-            : messages.map((item, index) => (
-              React.createElement('article', {
-                key: `${item.role}-${index}`,
-                className: item.role === 'user' ? 'dshDemo_user_bubble' : 'dshDemo_assistant_bubble'
-              }, item.text)
-            ))
-        ),
-        React.createElement('div', { className: 'dshDemo_composerSeat' },
-          React.createElement('textarea', {
-            ref: composerRef,
-            rows: 3,
-            placeholder: 'Native composer (shown when the skin composer is off)',
-            'aria-label': 'Prompt'
-          }),
+        )
+        : React.createElement('main', { className: 'dshDemo_centerCol', 'aria-hidden': 'true' },
           React.createElement('button', {
             type: 'button',
-            className: 'dshDemo_primary',
-            'aria-label': 'Send',
-            onClick: sendNative
-          }, 'Send')
-        )
-      ),
+            className: 'dshDemo_iconBtn dshDemo_rightOpener',
+            'aria-label': 'Open right sidebar',
+            'aria-expanded': state.rightSidebar.open ? 'true' : 'false',
+            onClick: () => store.toggleRightSidebar()
+          }, '⌸')
+        ),
       React.createElement('aside', { className: 'dshDemo_detailsCol dshDemo_details' },
         React.createElement('h2', null, 'Details'),
         current
@@ -164,6 +411,7 @@ export function DemoShell({ store }) {
           )
           : React.createElement('p', { className: 'dshDemo_dim' }, 'Select a session.')
       ),
+      React.createElement(DemoRightSidebar, { state, store }),
       state.workspaceOpen
         ? React.createElement('div', {
           className: 'dshDemo_settings dshDemo_dialog dshDemo_workspace',

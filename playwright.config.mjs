@@ -14,6 +14,9 @@ export default defineConfig({
   outputDir: 'test-results/e2e',
   use: {
     baseURL,
+    // DSH >= 0.1.5 gates the GUI behind a launch-token cookie; scripts/e2e-dsh.mjs
+    // primes it once and hands the resulting storage state to every test context.
+    storageState: process.env.DSH_E2E_STORAGE_STATE || undefined,
     viewport: { width: 1280, height: 800 },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure'

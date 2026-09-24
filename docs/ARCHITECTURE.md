@@ -21,7 +21,10 @@ package as a standard profile bundle. All behavior is browser-local.
 The static demo loads the same `lib/client.js` factory through a fake
 `window.__ModuleLoader__` and a Cordis-shaped `ctx` (`theme`, `slots`,
 `sessions`, `locale`, `workspaces`, `modelDirectories`). Conversation bubbles
-are a stand-in DOM tree so session-view CSS has something to paint. `native.*`
+are a stand-in DOM tree so session-view CSS has something to paint, and the fake
+host also renders DSH's right-sidebar contract (`data-sidebar-right-panel`,
+`data-sidebar-right-guide-entry`, the dockkit strip, files tree, and terminal) so
+the sidebar skin and the two right-pane chips are previewable. `native.*`
 paths that would send, select models, or run commands mutate an in-memory
 store. `demo-src/` is not in the npm `files` whitelist.
 
@@ -45,7 +48,8 @@ store. `demo-src/` is not in the npm `files` whitelist.
    `body[data-dsh-exhentai-view="index"|"session"]` for chip accents and
    index-vs-session layout.
 6. Register a General-settings item: appearance, category chips, native
-   sidebar visibility, skin vs native composer, Front Page display mode.
+   sidebar visibility, native right-sidebar visibility, skin vs native composer,
+   Front Page display mode.
    Appearance restores the previous built-in `light`, `dark`, or `system`
    preference. Settings labels register a `ds-hentai` dictionary on
    `ctx.locale` (`zh` / `en`) and re-render on `locale/change`; the gallery
@@ -80,6 +84,12 @@ overlay Search control fills the composer and clicks that button (or
 The plugin injects no document-level key logger; the overlay's own inputs only
 listen on their nodes.
 
+The two right-pane chips (`Workspace files`, `New terminal`) stay inside that
+boundary: they never call a private API, they click the host's own opener and
+then the matching `[data-sidebar-right-guide-entry]` node, polling briefly
+because the guide only exists while the sidebar is open. When the host ships no
+right sidebar the chips are not rendered at all.
+
 Fictional model / quota / connection / delivery / proxy readouts are local
 presentation. Connection label is a best-effort map of `ctx.connection` when
 that service exists; quota units are a decorative counter, not a billing API.
@@ -95,6 +105,8 @@ Browser `localStorage` keys:
 - `ds-hentai:favs` (JSON array of session ids)
 - `ds-hentai:model` / `ds-hentai:region` / `ds-hentai:cats` (chrome filters)
 - `ds-hentai:native-sidebar=on|off` (session-view native sidebar)
+- `ds-hentai:native-right-sidebar=on|off` (native right sidebar and its opener;
+  default `on` when the key is absent)
 - `ds-hentai:composer=skin|native` (mutually exclusive composer chrome)
 
 No prompts, replies, credentials, or usage telemetry are stored or transmitted.

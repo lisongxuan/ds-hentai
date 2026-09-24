@@ -10,6 +10,8 @@
 
 ![对话页](docs/preview-session.png)
 
+![右侧边栏](docs/preview-sidebar.png)
+
 ![设置](docs/preview-settings.png)
 
 ## 安装
@@ -27,7 +29,8 @@ npx @deepseek-ai/dsh plugin --profile web add github:<owner>/ds-hentai
 
 - **顶部导航** —— Front Page、New Session、Popular、Workspaces、Favorites、Settings。
 - **Front Page** —— 按类别筛选、搜索会话；列表可切换表格或缩略图。Compact / Extended 下每行有 Rename / Fork / Archive。
-- **会话页** —— 对话仍是原来的内容；可选皮肤搜索坞（Search / Clear，以及 Model、Access、Agent、Effort、Commands、Files）或继续用原生输入框。
+- **会话页** —— 对话仍是原来的内容；可选皮肤搜索坞（Search / Clear，以及 Model、Access、Agent、Effort、Commands、Files）或继续用原生输入框。另外两个按钮 **Workspace files** / **New terminal** 可按需打开原生右侧边栏对应的面板；宿主没有这个侧边栏时不会渲染。
+- **右侧边栏** —— 原生「开始」引导面板、dockkit 标签栏、文件树和终端框都套上同一套深炭皮肤。
 - **收藏** —— 列表里点心形，Favorites 只显示已收藏的会话。
 
 ## 设置
@@ -36,6 +39,7 @@ npx @deepseek-ai/dsh plugin --profile web add github:<owner>/ds-hentai
 
 - **启用皮肤 / 系统外观** —— 总开关。关掉即回到切换前的 DSH 外观。
 - **原生侧边栏** —— 会话页要不要显示左侧会话栏。隐藏后从 Front Page 点进会话。
+- **原生右侧边栏** —— 默认显示。关掉后隐藏侧边栏的入口，空的「开始」面板就不会自己冒出来。
 - **对话输入框** —— 皮肤输入框和原生输入框二选一。
 - **Front Page 显示模式** —— 会话列表怎么排。Front Page 底栏下拉也可以改。
 
@@ -62,15 +66,15 @@ npm run build      # src/client.js + src/skin.css → lib/client.js
 npm run check      # 校验 bundle 信封/占位符/无 ESM import/大小预算
 npm run build:demo # 静态演示 → demo/（源码在 demo-src/，假宿主，不跑 harness）
 npm run preview    # build:demo 后本地 http://127.0.0.1:4173/
-npm run capture    # 截 Front Page / 对话页 / 设置到 docs/preview*.png
+npm run capture    # 截 Front Page / 对话页 / 右侧边栏 / 设置到 docs/preview*.png
 npm test           # build + check + L1 + demo
 npm run test:compat  # L2：扫描已发布 DSH 包（pin + latest）
-npm run test:compat:all  # 对每个已发布 @deepseek-ai/dsh 版本跑 L1+L2，写回兼容矩阵
+npm run test:compat:all  # 对每个已发布 @deepseek-ai/dsh 版本跑 L1+L2，写入 docs/COMPATIBILITY.md
 npm run test:e2e     # L3：隔离 DSH_HOME + Playwright，对 0.1.0-rc.6
 npm pack --dry-run # 发布视图关门
 ```
 
-静态演示复用 `src/client.js` 和 `src/skin.css`。`demo-src/` 只提供假 DSH 宿主、夹具数据和会话气泡；`npm run build:demo` 把静态站写到 `demo/`（Vercel 输出目录）。搜索、设置、翻页都在浏览器里完成，不会调用 DeepSeek Harness、Agent 或模型接口。在线副本：[dshentai-demo.arkady14.site](https://dshentai-demo.arkady14.site)。
+静态演示复用 `src/client.js` 和 `src/skin.css`。`demo-src/` 只提供假 DSH 宿主、夹具数据、会话气泡，以及一个假右侧边栏（引导面板、文件树、终端），好让侧边栏皮肤也能预览；`npm run build:demo` 把静态站写到 `demo/`（Vercel 输出目录）。搜索、设置、翻页都在浏览器里完成，不会调用 DeepSeek Harness、Agent 或模型接口。在线副本：[dshentai-demo.arkady14.site](https://dshentai-demo.arkady14.site)。
 
 ## 目录
 
@@ -79,7 +83,7 @@ npm pack --dry-run # 发布视图关门
 - `demo-src/` —— 静态演示宿主（夹具 + 假 `ctx`）；不打进 npm 包
 - `scripts/build-client.mjs` —— 组装 `window.__ModuleLoader__.load(...)` 信封到 `lib/client.js`
 - `scripts/build-demo.mjs` —— 把插件 bundle 嵌进 `demo/`
-- `scripts/capture-preview.mjs` —— 从本地 demo 截 Front Page / 对话页 / 设置到 `docs/preview*.png`
+- `scripts/capture-preview.mjs` —— 从本地 demo 截 Front Page / 对话页 / 右侧边栏 / 设置到 `docs/preview*.png`
 - `screenshots.json` —— 插件市场截图顺序（路径相对本文件）
 - `docs/ARCHITECTURE.md` —— 运行时数据流与边界
 - `docs/COMPATIBILITY.md` —— 基线、分层稳定性、恢复方式
@@ -87,7 +91,7 @@ npm pack --dry-run # 发布视图关门
 
 ## 说明
 
-纯浏览器端插件，不改 DSH 文件。会话、回复和设置仍走 DeepSeek Harness；皮肤只换壳。偏好存在本机浏览器里。安装下限是 DSH `0.0.1-rc.5`（第一个带 `shell.overlay` 的版本）；之后的 harness（含当前 `0.1.x-rc`）都放行。测试钉住 `0.1.0-rc.6`。详见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
+纯浏览器端插件，不改 DSH 文件。会话、回复和设置仍走 DeepSeek Harness；皮肤只换壳。偏好存在本机浏览器里。安装下限是 DSH `0.0.1-rc.5`（第一个带 `shell.overlay` 的版本）；之后的 harness（含当前 `0.1.x-rc`）都放行。测试钉住 `0.1.0-rc.6`，目前验证到的最新版本是 `0.1.7-rc.1`。详见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
 
 ## License
 

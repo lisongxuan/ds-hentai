@@ -9,41 +9,46 @@ html, body {
 }
 
 .dsh-ex-demo-banner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 5000;
-  height: 28px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 0 12px;
-  background: #1f2124;
-  border-bottom: 1px solid #000;
-  color: #dddddd;
-  font-size: 11px;
-  letter-spacing: 0.02em;
+  display: none;
 }
 
 .dsh-ex-demo-banner strong { color: #fb7878; font-weight: 700; }
 .dsh-ex-demo-banner span { color: #8f8f8f; }
 
-body.dsh-ex-demo { padding-top: 28px; box-sizing: border-box; }
-body.dsh-ex-demo .dsh-ex-chrome { top: 28px !important; }
+body.dsh-ex-demo { padding-top: 0; box-sizing: border-box; }
+body.dsh-ex-demo .dsh-ex-chrome { top: 0 !important; }
 body.dsh-ex-demo[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) {
-  padding-top: calc(28px + var(--ex-chrome-nav, 32px));
+  padding-top: var(--ex-chrome-nav, 32px);
 }
 
-#root { min-height: calc(100vh - 28px); }
+#root { min-height: 100vh; }
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) #root {
+  height: calc(100vh - var(--ex-chrome-nav, 32px) - var(--ex-chrome-foot, 42px));
+  min-height: calc(100vh - var(--ex-chrome-nav, 32px) - var(--ex-chrome-foot, 42px));
+}
+/* DSH's real frame owns the composer space. The fake host has no native
+   content below it, so keep the overlay from creating a second scroll area. */
+body.dsh-ex-demo[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) {
+  padding-bottom: 0 !important;
+}
 
 .dshDemo_frame {
+  position: relative;
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) 220px;
-  min-height: calc(100vh - 28px);
+  /* The native DSH right panel overlays the frame instead of pushing the
+     center column. Keep the fake host's grid stable in both states. */
+  grid-template-columns: 240px minmax(0, 1fr) 220px 0;
+  min-height: 100vh;
   background: var(--dsw-alias-bg-base, #34353b);
+}
+
+body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) .dshDemo_frame {
+  height: calc(100vh - var(--ex-chrome-nav, 32px) - var(--ex-chrome-foot, 42px));
+  min-height: calc(100vh - var(--ex-chrome-nav, 32px) - var(--ex-chrome-foot, 42px));
+}
+
+.dshDemo_frame.dshDemo_rightOpen {
+  grid-template-columns: 240px minmax(0, 1fr) 220px 0;
 }
 
 .dshDemo_sidebarCol {
@@ -103,6 +108,7 @@ body.dsh-ex-demo[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) {
 .dshDemo_time { display: block; font-size: 10px; color: #8f8f8f; }
 
 .dshDemo_centerCol {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -110,6 +116,7 @@ body.dsh-ex-demo[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) {
 }
 
 .dshDemo_header {
+  position: relative;
   background: #4f535b;
   border-bottom: 1px solid #000;
   min-height: 50px;
@@ -234,14 +241,267 @@ body:not([data-dsh-exhentai-active="true"]) .dshDemo_centerCol {
 }
 body:not([data-dsh-exhentai-active="true"]) .dshDemo_sidebarCol,
 body:not([data-dsh-exhentai-active="true"]) .dshDemo_detailsCol,
+body:not([data-dsh-exhentai-active="true"]) .dshDemo_rightSidebar[data-sidebar-right-open="true"],
 body:not([data-dsh-exhentai-active="true"]) .dshDemo_header,
 body:not([data-dsh-exhentai-active="true"]) .dshDemo_composerSeat {
   background: var(--dsw-alias-bg-layer-1, #ececee);
   color: var(--dsw-alias-label-primary, #1f1f1f);
 }
 
+/* ---- Fake right sidebar -------------------------------------------------
+   Host-side baseline for DSH's dockkit guide panel. src/skin.css restyles
+   everything below through the same semantic hooks, so this file only has to
+   provide a plausible stock look. Panel chrome is gated on the open marker,
+   exactly like the skin's rules: the panel element stays in the DOM when
+   closed, and an ungated background or border would paint a stray line. */
+
+.dshDemo_rightSidebar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  z-index: 4;
+  box-sizing: border-box;
+}
+
+.dshDemo_rightSidebar[data-sidebar-right-open="true"] {
+  width: 475px;
+  background: var(--dsw-alias-bg-base, #34353b);
+  border-left: 1px solid #000;
+}
+
+.dshDemo_rightOpener {
+  position: absolute;
+  right: 12px;
+  top: 11px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dshDemo_dockkitSurface {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.dshDemo_strip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  background: #3a3d44;
+  border-bottom: 1px solid #000;
+}
+
+.dshDemo_stripTabs {
+  display: flex;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dshDemo_tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: #4f535b;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.dshDemo_tabActive { background: #34353b; }
+
+.dshDemo_tabClose {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0 2px;
+  cursor: pointer;
+}
+
+.dshDemo_iconBtn {
+  border: 1px solid #6f6f6f;
+  border-radius: 3px;
+  background: #34353b;
+  color: #f1f1f1;
+  font: inherit;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.dshDemo_rightSidebar [data-sidebar-right-toggle] {
+  position: absolute;
+  top: 10px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dshDemo_mode {
+  margin-left: auto;
+  color: #8f8f8f;
+  font-size: 10px;
+}
+
+.dshDemo_pane {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.dshDemo_guide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 18px 14px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.dshDemo_hero {
+  font-size: 13px;
+  font-weight: 700;
+  color: #8f8f8f;
+}
+
+.dshDemo_entryCell { width: 100%; }
+
+.dshDemo_entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid #4f535b;
+  border-radius: 8px;
+  background: #3a3d44;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dshDemo_entryWide {
+  padding: 0;
+  gap: 0;
+}
+
+.dshDemo_entryMain {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dshDemo_entryTrigger {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.dshDemo_entryIcon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  color: #8f8f8f;
+}
+
+.dshDemo_entryText,
+.dshDemo_text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.dshDemo_entryTitle,
+.dshDemo_title {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dshDemo_entryDescription,
+.dshDemo_description {
+  font-size: 11px;
+  color: #8f8f8f;
+}
+
+.dshDemo_filesBand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+}
+
+.dshDemo_filesPath {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+
+.dshDemo_filesRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+}
+
+.dshDemo_filesSize { color: #8f8f8f; }
+
+.dshDemo_filesCode {
+  display: block;
+  padding: 6px 8px;
+  font-size: 10px;
+  color: #8f8f8f;
+}
+
+.dshDemo_terminal { min-height: 100%; }
+
+.dshDemo_screen {
+  padding: 8px 10px;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre;
+}
+
 @media screen and (max-width: 800px) {
-  .dshDemo_frame { grid-template-columns: 0 minmax(0, 1fr) 0; }
+  .dshDemo_frame,
+  .dshDemo_frame.dshDemo_rightOpen { grid-template-columns: 0 minmax(0, 1fr) 0 0; }
   .dshDemo_sidebarCol,
-  .dshDemo_detailsCol { display: none; }
+  .dshDemo_detailsCol,
+  .dshDemo_rightSidebar { display: none; }
 }

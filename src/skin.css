@@ -349,6 +349,26 @@ body[data-dsh-exhentai-active="true"] [class$="_primary"] {
 }
 body[data-dsh-exhentai-active="true"] [class$="_primary"]:hover { background: var(--ex-bg-input-hover); }
 
+/* Host setup dialogs dim disabled buttons so aggressively that the action
+   label becomes unreadable on the dark gallery palette. Keep the disabled
+   state (and therefore its interaction semantics), but retain enough
+   contrast to explain what the action will do once the key is entered. */
+body[data-dsh-exhentai-active="true"] [role="dialog"]
+  :is(button:disabled, [role="button"][aria-disabled="true"], input:disabled) {
+  opacity: 1;
+  color: #c8c8c8 !important;
+  -webkit-text-fill-color: #c8c8c8 !important;
+  background: #43464e !important;
+  border-color: #777b83 !important;
+  box-shadow: none;
+  cursor: default;
+}
+body[data-dsh-exhentai-active="true"] [role="dialog"]
+  :is(button:not(:disabled), [role="button"]:not([aria-disabled="true"]), input:not(:disabled)) {
+  color: var(--ex-text) !important;
+  -webkit-text-fill-color: var(--ex-text) !important;
+}
+
 /* ==== Tooltip: yellow bubble with dark ink ==== */
 body[data-dsh-exhentai-active="true"] [class*="_bubble_"],
 body[data-dsh-exhentai-active="true"] [role="tooltip"] {
@@ -425,6 +445,315 @@ body[data-dsh-exhentai-active="true"][data-dsh-exhentai-chips="off"] :where([cla
   background: var(--ex-bg-panel);
   border: 1px solid var(--ex-border-input);
   color: var(--ex-text);
+}
+
+/* ==== Right sidebar (dockkit): 开始 / guide index, tab strip, panes ====
+   Hooked on DSH's semantic contract attributes (data-sidebar-right-*,
+   data-dockkit-*, data-files-*) rather than hashed class names: this one
+   feature mixes "hash_name" (geFEbW_guide, P3OORG_panel) with
+   "_name_hash_index" (_tab_11olo_134, _button_cfgyt_4), so a suffix
+   selector like [class$="_tab"] silently misses the dockkit chrome.
+   Class substrings are used only where a node exposes no data hook.
+   Dockkit rules stay scoped to [data-sidebar-right-panel]: dockkit is a general
+   docking framework, so an unscoped [data-dockkit-tab] could later restyle an
+   unrelated surface. Every dockkit node sits inside the panel today.
+   Selectors are inert on hosts that lack the right sidebar. */
+/* The panel element stays in the DOM at full size while the sidebar is closed —
+   it merely loses [data-sidebar-right-open] and renders no content. Styling it
+   unconditionally painted a stray 1px rule plus a panel-coloured box down the
+   middle of the conversation, so every shell rule is gated on the open state. */
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] {
+  background: var(--ex-bg-base);
+  border-left: 1px solid var(--ex-border-box);
+  color: var(--ex-text);
+  font-family: Arial, Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: left;
+  text-rendering: optimizeLegibility;
+}
+/* Dockkit's outer shell inherits the host's 16px root size and its buttons
+   keep the browser control font unless explicitly reset. Keep every sidebar
+   surface on the same compact skin scale; semantic sub-elements below can
+   still use their smaller metadata sizes. */
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open]
+  :where(button, [role="button"], input, select, textarea) {
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open]
+  :where(button, [role="button"]) {
+  color: inherit;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-surface],
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-pane] {
+  background: var(--ex-bg-base);
+  border-radius: 0;
+}
+/* The native right sidebar is opt-in (skin setting, off by default), so its only
+   DSH-shipped entry point is hidden: the empty guide panel never appears on its
+   own. The composer's 工作区文件 / 新建终端 chips still open a pane on demand.
+   The opener carries no data hook, hence the localised aria-label match. */
+body[data-dsh-exhentai-active="true"][data-dsh-exhentai-right-sidebar="off"] :is([aria-label="打开右侧边栏"], [aria-label="Open right sidebar"]) {
+  display: none !important;
+}
+
+/* Guide ("开始") becomes a gallery index: title band on top, one row per entry.
+   Stock centres the column and pads it; an index reads better top-aligned. */
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide] {
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  background: var(--ex-bg-base);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide]::after {
+  content: none;
+}
+/* The hero glyph ships as --dsw-static-neutral-700 (#3c3c3d) under
+   body[data-ds-dark-theme], i.e. ~1.06:1 on the #34353b panel. Recolouring it
+   locally keeps the shared static token (and other components) untouched. */
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide] > span:first-child,
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide] [class*="_hero"] {
+  justify-content: center;
+  margin: 0;
+  padding: 9px 0;
+  background: var(--ex-bg-table-head);
+  border-bottom: 1px solid var(--ex-border-box);
+  color: var(--ex-text-dim) !important;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide] [class*="_entryCell"] {
+  width: 100%;
+  max-width: none;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry] {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  padding: 10px 12px;
+  gap: 10px;
+  border: 0;
+  border-bottom: 1px solid var(--ex-border-cell);
+  border-left: 3px solid var(--ex-ct6);
+  border-radius: 0;
+  background: var(--ex-bg-zebra-odd);
+  box-shadow: none;
+  text-align: left;
+  cursor: pointer;
+}
+/* Zebra striping keys off the cell, not the entry: each entry sits alone
+   inside its [data-slot] wrapper, so :nth-child on the entry never alternates.
+   :where() keeps this rule under the :hover rule in specificity — otherwise the
+   striped background wins and the row never highlights. */
+body[data-dsh-exhentai-active="true"] :where([data-sidebar-right-guide] [class*="_entryCell"]:nth-child(even)) [data-sidebar-right-guide-entry] {
+  background: var(--ex-bg-zebra-even);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry]:hover {
+  background: var(--ex-bg-table-head);
+}
+/* The terminal entry is a design-system button + menu inside a wrapper, not the
+   guide's own capsule, so the row chrome lives on the wrapper and the inner
+   button is flattened and stretched to match the files row height. */
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry="terminal"] {
+  height: 54px;
+  min-height: 54px;
+  padding: 0;
+  border-left-color: var(--ex-ct5);
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry="terminal"] button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 16.8px;
+  color: var(--ex-text);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry="terminal"] > button:first-child {
+  display: flex;
+  flex: 1 1 auto;
+  align-self: stretch;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  min-width: 0;
+  text-align: left;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry="terminal"] > button:first-child > svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry="terminal"] [class*="_text"] {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  min-width: 0;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry="terminal"] [class*="_title"] {
+  font-size: 12px;
+  line-height: 16.8px;
+  font-weight: 700;
+  color: var(--ex-text);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry="terminal"] [class*="_description"] {
+  font-size: 11px;
+  line-height: 15.4px;
+  color: var(--ex-text-muted);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry="terminal"] > :last-child {
+  flex: 0 0 44px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide] [class*="_entryIcon"] {
+  width: 22px;
+  height: 22px;
+  color: var(--ex-text-dim);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide] [class*="_entryText"] {
+  gap: 1px;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide] [class*="_entryTitle"] {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ex-text);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide] [class*="_entryDescription"] {
+  font-size: 11px;
+  color: var(--ex-text-muted);
+}
+
+/* Tab strip: square tabs instead of the stock 12px pill. dockkit exposes no
+   aria-selected / role=tab, so the active tab is matched on the "_tabActive"
+   name segment (the hash suffix is free to change). */
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-strip] {
+  gap: 0;
+  background: var(--ex-bg-table-head);
+  border-bottom: 1px solid var(--ex-border-box);
+  border-radius: 0;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-strip-tabs] {
+  gap: 0;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-tab] {
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--ex-border-cell);
+  border-bottom: 0;
+  border-radius: 0;
+  background: var(--ex-bg-base);
+  color: var(--ex-text-dim);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-tab]:hover {
+  background: var(--ex-bg-input-hover);
+  color: var(--ex-text);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-tab][class*="_tabActive"] {
+  background: var(--ex-bg-panel);
+  border-color: var(--ex-border-box);
+  color: var(--ex-text);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-tab-title] {
+  font-size: 12px;
+  font-weight: 700;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-tab-close] {
+  border-radius: 0;
+  color: var(--ex-text-muted);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-tab-close]:hover {
+  background: var(--ex-error);
+  color: #ffffff;
+}
+
+/* Strip chrome (new tab / split / fullscreen / collapse) uses the skin's
+   compact gray control look. */
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-add-tab],
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-split-button],
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-mode],
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-toggle] {
+  min-height: 24px;
+  border: 1px solid var(--ex-border-input);
+  border-radius: 3px;
+  background: var(--ex-bg-input);
+  color: var(--ex-text);
+  box-shadow: none;
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-add-tab]:hover,
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-split-button]:hover,
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-mode]:hover,
+body[data-dsh-exhentai-active="true"] [data-sidebar-right-toggle]:hover {
+  background: var(--ex-bg-input-hover);
+  border-color: var(--ex-border-input-hover);
+}
+
+/* Files pane: metadata band plus zebra table rows. */
+body[data-dsh-exhentai-active="true"] [data-files-state] {
+  background: var(--ex-bg-base);
+  font-size: 12px;
+}
+body[data-dsh-exhentai-active="true"] [data-files-path] {
+  padding: 3px 6px;
+  background: var(--ex-bg-table-head);
+  border-bottom: 1px solid var(--ex-border-box);
+  color: var(--ex-text);
+  font-size: 11px;
+  font-weight: 700;
+}
+body[data-dsh-exhentai-active="true"] [data-files-body] {
+  background: var(--ex-bg-base);
+}
+body[data-dsh-exhentai-active="true"] [data-files-row] {
+  border-radius: 0;
+  border-bottom: 1px solid var(--ex-border-cell);
+  color: var(--ex-text);
+  font-size: 12px;
+}
+body[data-dsh-exhentai-active="true"] [data-files-row]:nth-child(odd) {
+  background: var(--ex-bg-zebra-odd);
+}
+body[data-dsh-exhentai-active="true"] [data-files-row]:nth-child(even) {
+  background: var(--ex-bg-zebra-even);
+}
+body[data-dsh-exhentai-active="true"] [data-files-row]:hover {
+  background: var(--ex-bg-table-head);
+}
+body[data-dsh-exhentai-active="true"] [data-files-entry] {
+  color: var(--ex-text);
+}
+body[data-dsh-exhentai-active="true"] [data-files-code] {
+  color: var(--ex-text-dim);
+}
+body[data-dsh-exhentai-active="true"] [data-files-reload] {
+  border: 1px solid var(--ex-border-input);
+  border-radius: 3px;
+  background: var(--ex-bg-input);
+  color: var(--ex-text);
+}
+body[data-dsh-exhentai-active="true"] [data-files-reload]:hover {
+  background: var(--ex-bg-input-hover);
+  border-color: var(--ex-border-input-hover);
+}
+
+/* Terminal pane: xterm already derives its palette from --dsw-alias-bg-base
+   (verified #34353b, matching --ex-bg-base), so only the frame is restyled. */
+body[data-dsh-exhentai-active="true"] [data-sidebar-terminal] {
+  background: var(--ex-bg-base);
+  border-top: 1px solid var(--ex-border-box);
+}
+body[data-dsh-exhentai-active="true"] [data-sidebar-terminal] [class*="_screen"] {
+  background: var(--ex-bg-base);
 }
 
 /* ============================================================
@@ -1074,6 +1403,11 @@ body[data-dsh-exhentai-active="true"] .dsh-ex-action:hover {
     box-shadow: none !important;
   }
   .dsh-ex-cs, .dsh-ex-itg, .dsh-ex-idi {
+    border: 1px solid CanvasText;
+  }
+  body[data-dsh-exhentai-active="true"] [data-sidebar-right-guide-entry],
+  body[data-dsh-exhentai-active="true"] [data-sidebar-right-panel][data-sidebar-right-open] [data-dockkit-tab],
+  body[data-dsh-exhentai-active="true"] [data-files-row] {
     border: 1px solid CanvasText;
   }
 }
