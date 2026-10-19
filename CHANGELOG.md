@@ -12,6 +12,13 @@
   whose `retainedBy.mainView` is set. Session lists and the current id now fall
   back to that field, so the gallery highlights the open session on `0.1.6`+ /
   `0.2.x`. The demo host emits the same snapshot shape, and L1 covers it.
+- **Demo build restored.** The `0.7.1` session fix accidentally overwrote
+  `demo-src/boot.js` with a copy of the demo host, so `npm run build:demo`
+  stopped emitting the `__DS_HENTAI_DEMO__` marker and the demo shell, and
+  `npm test` failed at `check:demo`. The entry point mounts the shell and the
+  `__ModuleLoader__` envelope again, `check:demo` now also asserts the demo
+  entry and shell markers, and the retained-session snapshot lives in
+  `demo-src/host.js` where the plugin reads it.
 - **0.2.x L3 hardening.** The Playwright smoke dismisses the first-run
   `Preview Notice` / `Get started` dialogs before asserting the chrome, and a
   new test walks **Open Host Settings** to the native General row.

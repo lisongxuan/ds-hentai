@@ -29,6 +29,12 @@ if (!html.includes('Static demo') || !html.includes('./app.js')) {
 if (!app.includes('__DS_HENTAI_DEMO__')) {
   errors.push('demo boot marker __DS_HENTAI_DEMO__ is missing')
 }
+if (!app.includes('data-dsh-exhentai-demo')) {
+  errors.push('demo entry marker data-dsh-exhentai-demo is missing')
+}
+if (!app.includes('dshDemo_sessionRow') || !app.includes('dshDemo_thread')) {
+  errors.push('demo shell is missing from the bundle (demo-src/boot.js must mount DemoShell)')
+}
 if (!app.includes('window.__ModuleLoader__.load')) {
   errors.push('plugin ModuleLoader envelope is missing from the demo bundle')
 }

@@ -182,8 +182,14 @@ export function createDemoHost(store, options) {
       getSnapshot() {
         const live = store.get()
         const byId = Object.create(null)
-        for (const item of live.sessions) byId[item.id] = item
-        return { byId, ids: live.sessions.map((item) => item.id), currentId: live.currentId }
+        for (const item of live.sessions) {
+          const row = Object.assign({}, item, {
+            retainedBy: item.id === live.currentId ? { mainView: 1 } : {}
+          })
+          delete row.selected
+          byId[item.id] = row
+        }
+        return { byId, ids: live.sessions.map((item) => item.id), phase: 'ready', projectionsBySession: {} }
       }
     },
     getSnapshot() { return this.list.getSnapshot() },
