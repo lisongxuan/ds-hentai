@@ -27,7 +27,9 @@
   reported a bare `ENEEDAUTH`. The workflow now asserts npm ≥ 11.5.1, performs
   the same id_token exchange before the slow test steps and prints the
   registry's answer (404 = trusted publisher missing or mismatched, 401 = token
-  refused), and re-runs a failed publish once with `--loglevel=verbose`. The
+  refused). The endpoint answers `201 Created` on success, so any 2xx passes,
+  and a success body — which carries the short-lived npm token — is never
+  echoed. A failed publish is re-run once with `--loglevel=verbose`. The
   probe is skipped when the version is already on npm, so a Release-only retry
   still needs no trusted publisher.
 - **Windows probe fix.** `scripts/compat-lib.mjs` extracts package tarballs with
