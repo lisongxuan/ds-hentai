@@ -26,6 +26,21 @@
 #     Environment name: (leave empty; this job does not use an environment)
 #     Allowed actions: npm publish
 #   Requires a public repo and npm CLI ≥ 11.5.1 (Node ≥ 22.14).
+#
+# Reading a failure. npm's OIDC helper (lib/utils/oidc.js) never throws: when
+# the id_token is unavailable, or the registry refuses the token exchange, it
+# returns undefined, logs only at `verbose`, and `npm publish` then dies with a
+# bare `npm error code ENEEDAUTH ... need auth`. That message therefore means
+# "trusted publishing did not happen", never "the package is not mine". The
+# steps below turn each silent cause into an actionable error:
+#   - "Require npm CLI that supports Trusted Publishing" — npm < 11.5.1 has no
+#     OIDC support at all, so it can never publish without a token.
+#   - "Verify npm trusted publishing for this package" — performs the same
+#     id_token exchange `npm publish` would, and prints the registry's own
+#     answer (404 = no trusted publisher matches this workflow/repo/env,
+#     401 = GitHub refused the token or `id-token: write` is missing).
+#   - The publish step re-runs once with `--loglevel=verbose` on failure, so
+#     the registry's rejection body is visible in the log.
 
 name: Release
 
@@ -71,7 +86,19 @@ jobs:
           package-manager-cache: false
 
       - name: Require npm CLI that supports Trusted Publishing
-        run: npm install -g npm@^11.5.1
+        run: |
+          set -euo pipefail
+          npm install -g npm@^11.5.1
+          current="$(npm --version)"
+          needed="11.5.1"
+          # `sort -V` gives a real version compare; a plain string test would
+          # accept e.g. 11.5.0, which predates trusted publishing.
+          oldest="$(printf '%s\n%s\n' "$needed" "$current" | sort -V | head -n1)"
+          if [ "$oldest" != "$needed" ]; then
+            echo "::error::npm ${current} predates trusted publishing; npm >= ${needed} is required for OIDC publishing."
+            exit 1
+          fi
+          echo "npm ${current} supports trusted publishing."
 
       - name: Assert nothing shadows OIDC trusted publishing
         run: |
@@ -122,6 +149,72 @@ jobs:
           echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
           echo "npm_tag=$npm_tag" >> "$GITHUB_OUTPUT"
 
+      # Performs the same id_token exchange `npm publish` would, because npm
+      # swallows the failure and reports only ENEEDAUTH. Runs before the slow
+      # test steps so a config-only problem costs seconds instead of minutes.
+      - name: Verify npm trusted publishing for this package
+        env:
+          NAME: ${{ steps.meta.outputs.name }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+            echo "${NAME}@${VERSION} is already on npm; only the GitHub Release remains."
+            exit 0
+          fi
+          id_token="$(curl -fsS \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org" \
+            | node --input-type=commonjs -e '
+              let body = ""
+              process.stdin.on("data", (chunk) => { body += chunk })
+              process.stdin.on("end", () => {
+                let value
+                try { value = JSON.parse(body).value } catch {}
+                if (!value) {
+                  console.error("GitHub returned no id_token for npm:registry.npmjs.org")
+                  process.exit(1)
+                }
+                process.stdout.write(value)
+              })
+            ')"
+          exchange="https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/${NAME}"
+          body_file="${RUNNER_TEMP:-/tmp}/npm-token-exchange.json"
+          code="$(curl -sS -o "$body_file" -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer ${id_token}" "${exchange}")"
+          echo "id_token exchange for ${NAME} -> HTTP ${code}"
+          # Never echo a 200 body: it carries the short-lived npm token.
+          if [ "$code" != "200" ]; then
+            echo "registry answer:"
+            cat "$body_file" || true
+            echo
+          fi
+          case "$code" in
+            200)
+              echo "OK: npm recognizes this workflow as a trusted publisher for ${NAME}."
+              ;;
+            404)
+              echo "::error::npm has no trusted publisher reachable for ${NAME} from this workflow."
+              echo "Fix on npmjs.com -> ${NAME} -> Settings -> Trusted publishing (GitHub Actions):"
+              echo "  Organization or user: lisongxuan"
+              echo "  Repository:          ds-hentai"
+              echo "  Workflow filename:   release.yml"
+              echo "  Environment name:    (leave empty; this job declares none)"
+              echo "  Allowed actions:     npm publish"
+              exit 1
+              ;;
+            401|403)
+              echo "::error::npm rejected the GitHub OIDC token for ${NAME}."
+              echo "The job must keep 'id-token: write', and the trusted publisher's"
+              echo "environment name must match this job's (both empty by default)."
+              exit 1
+              ;;
+            *)
+              echo "::error::npm id_token exchange returned HTTP ${code}."
+              exit 1
+              ;;
+          esac
+
       - run: npm ci
       - run: npm test
       - run: npm run pack:check
@@ -145,8 +238,16 @@ jobs:
           set -euo pipefail
           if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
             echo "npm already has ${NAME}@${VERSION}; skipping publish (re-run after a GitHub Release failure)"
-          else
-            npm publish "./${TARBALL}" --access public --tag "$NPM_TAG"
+          elif ! npm publish "./${TARBALL}" --access public --tag "$NPM_TAG"; then
+            # The first attempt is quiet so a successful publish stays readable.
+            # On failure, repeat it with verbose logging: that is the only way to
+            # see the registry's token-exchange rejection, which npm otherwise
+            # reduces to `ENEEDAUTH`.
+            echo "::group::npm publish --loglevel=verbose (diagnostics)"
+            npm publish "./${TARBALL}" --access public --tag "$NPM_TAG" --loglevel=verbose || true
+            echo "::endgroup::"
+            echo "::error::npm publish failed for ${NAME}@${VERSION}; see the verbose output above."
+            exit 1
           fi
           # Never let a silent auth failure reach the Release step as a
           # publication that nobody noticed did not happen.

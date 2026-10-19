@@ -22,6 +22,14 @@
 - **0.2.x L3 hardening.** The Playwright smoke dismisses the first-run
   `Preview Notice` / `Get started` dialogs before asserting the chrome, and a
   new test walks **Open Host Settings** to the native General row.
+- **Release workflow names the npm auth failure.** npm's OIDC helper returns
+  silently when trusted publishing is unavailable, so `npm publish` only ever
+  reported a bare `ENEEDAUTH`. The workflow now asserts npm ≥ 11.5.1, performs
+  the same id_token exchange before the slow test steps and prints the
+  registry's answer (404 = trusted publisher missing or mismatched, 401 = token
+  refused), and re-runs a failed publish once with `--loglevel=verbose`. The
+  probe is skipped when the version is already on npm, so a Release-only retry
+  still needs no trusted publisher.
 - **Windows probe fix.** `scripts/compat-lib.mjs` extracts package tarballs with
   relative paths, so Git Bash/MSYS `tar` no longer reads the `D:` drive as a
   remote host.
