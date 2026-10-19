@@ -86,7 +86,6 @@ The static demo reuses `src/client.js` and `src/skin.css`. `demo-src/` is only a
 - `scripts/build-client.mjs` — wrap `window.__ModuleLoader__.load(...)` into `lib/client.js`
 - `scripts/build-demo.mjs` — embed the plugin bundle in `demo/`
 - `scripts/capture-preview.mjs` — screenshot Front Page / session / Settings into `docs/preview*.png`
-- `scripts/registry-published.mjs` — release gate: wait until a published version is actually readable from the registry (`npm view` plus a short retry is not enough)
 - `screenshots.json` — storefront gallery order (paths relative to this file)
 - `docs/ARCHITECTURE.md` — runtime data flow and boundaries
 - `docs/COMPATIBILITY.md` — baseline, layer stability, recovery

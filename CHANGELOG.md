@@ -35,10 +35,14 @@
 - **Release waits for npm validation.** The post-publish check gave a new
   version three 5-second tries; `0.7.1` was accepted by the registry
   (`+ ds-hentai@0.7.1`, provenance logged to sigstore) yet sat at **Validating**
-  for about ten minutes, so a healthy publish was reported as a failure.
-  `scripts/registry-published.mjs` now asks `/<name>/<version>` directly (no
-  npm cache, cache-busted) with a 30-minute budget, and the workflow states
-  exactly what to do if a version still is not servable at the end.
+  for about ten minutes, so a healthy publish was reported as a failure. The
+  publish step now reads `/<name>/<version>` directly (no npm cache,
+  cache-busted) and waits up to 30 minutes, states exactly what to do if a
+  version still is not servable at the end, and treats npm's "cannot publish
+  over the previously published versions" as "already published" instead of a
+  failure. The helper lives inside the workflow, not in `scripts/`: the job
+  checks out the *release tag*, so a script added to `main` afterwards is not in
+  that tree (adding one broke the `v0.7.1` retry with `Cannot find module`).
 - **Windows probe fix.** `scripts/compat-lib.mjs` extracts package tarballs with
   relative paths, so Git Bash/MSYS `tar` no longer reads the `D:` drive as a
   remote host.

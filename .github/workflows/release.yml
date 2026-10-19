@@ -10,6 +10,13 @@
 #   A version already on npm is skipped, never republished, so a retry can
 #   finish the GitHub Release without moving the tag.
 #
+# Self-contained by necessity. A manual run takes the workflow file from the
+# branch you pick but the tree from `tag` (`actions/checkout` uses `inputs.tag`),
+# so the steps may only use files that exist in that tag. A helper added to
+# `main` afterwards is not in an older tag's tree and the run dies with
+# `Cannot find module ...` — hence the registry helper is written out at run
+# time instead of living in `scripts/`.
+#
 # Auth is npm Trusted Publishing (OIDC) — there is no NPM_TOKEN anywhere.
 # `actions/setup-node` must NOT be given `registry-url`: that input writes an
 # .npmrc containing `_authToken=${NODE_AUTH_TOKEN}` and exports a dummy
@@ -126,6 +133,56 @@ jobs:
           done
           echo "OK: no registry token configured; OIDC trusted publishing will be used."
 
+      # This job checks out the release tag, so it runs the tree of that tag — a
+      # helper file added to main later is simply not there (`Cannot find module
+      # .../scripts/registry-published.mjs`). Everything the release needs is
+      # therefore either in the workflow or generated here at run time.
+      - name: Write the registry wait helper
+        run: |
+          cat > "$RUNNER_TEMP/registry.sh" <<'HELPER'
+          REGISTRY_URL="${REGISTRY_URL:-https://registry.npmjs.org}"
+          REGISTRY_URL="${REGISTRY_URL%/}"
+
+          # Read the version endpoint directly instead of `npm view`:
+          #  - `npm view` answers from ~/.npm/_cacache, so a cached 404 outlives
+          #    the publish that fixed it;
+          #  - the registry accepts an upload before the version is servable: a
+          #    fresh publish shows up as "Validating" and /<name>/<version> keeps
+          #    answering 404 for minutes (ds-hentai@0.7.1 needed about ten).
+          registry_has_version() {
+            local code
+            code="$(curl -sS --max-time 20 -o /dev/null -w '%{http_code}' \
+              -H 'cache-control: no-cache' \
+              "${REGISTRY_URL}/${1}/${2}?t=$(date +%s%N)" || true)"
+            [ "$code" = "200" ]
+          }
+
+          wait_for_registry() {
+            local name="$1" version="$2"
+            local timeout="${REGISTRY_TIMEOUT_SECONDS:-1800}"
+            local interval="${REGISTRY_INTERVAL_SECONDS:-15}"
+            local deadline attempt left
+            deadline=$(( $(date +%s) + timeout ))
+            attempt=0
+            while :; do
+              attempt=$((attempt + 1))
+              if registry_has_version "$name" "$version"; then
+                echo "attempt ${attempt}: ${name}@${version} is live on the registry."
+                return 0
+              fi
+              left=$(( deadline - $(date +%s) ))
+              if [ "$left" -le 0 ]; then
+                echo "${name}@${version} is still not readable after ${timeout}s."
+                return 1
+              fi
+              echo "attempt ${attempt}: ${name}@${version} not readable yet; ${left}s left"
+              if [ "$left" -lt "$interval" ]; then sleep "$left"; else sleep "$interval"; fi
+            done
+          }
+          HELPER
+          test -s "$RUNNER_TEMP/registry.sh"
+          echo "wrote $RUNNER_TEMP/registry.sh"
+
       - name: Verify tag matches package.json
         id: meta
         run: |
@@ -160,7 +217,8 @@ jobs:
           VERSION: ${{ steps.meta.outputs.version }}
         run: |
           set -euo pipefail
-          if node scripts/registry-published.mjs "${NAME}" "${VERSION}" --once; then
+          . "$RUNNER_TEMP/registry.sh"
+          if registry_has_version "${NAME}" "${VERSION}"; then
             echo "${NAME}@${VERSION} is already on npm; only the GitHub Release remains."
             exit 0
           fi
@@ -241,16 +299,22 @@ jobs:
           TARBALL: ${{ steps.pack.outputs.tarball }}
         run: |
           set -euo pipefail
-          # `npm view` answers from the run's cache and the registry serves a
-          # version only after it finishes validating the upload, so both the
-          # skip check and the wait below read the registry directly.
-          if node scripts/registry-published.mjs "${NAME}" "${VERSION}" --once; then
+          . "$RUNNER_TEMP/registry.sh"
+          publish_log="$RUNNER_TEMP/npm-publish.log"
+          if registry_has_version "${NAME}" "${VERSION}"; then
             echo "npm already has ${NAME}@${VERSION}; skipping publish (re-run after a GitHub Release failure)"
-          elif ! npm publish "./${TARBALL}" --access public --tag "$NPM_TAG"; then
-            # The first attempt is quiet so a successful publish stays readable.
-            # On failure, repeat it with verbose logging: that is the only way to
-            # see the registry's token-exchange rejection, which npm otherwise
-            # reduces to `ENEEDAUTH`.
+          elif npm publish "./${TARBALL}" --access public --tag "$NPM_TAG" 2>&1 | tee "$publish_log"; then
+            : # published just now
+          elif grep -q 'You cannot publish over the previously published versions' "$publish_log"; then
+            # The version is live even though the pre-check above missed it, e.g.
+            # it finished validating between the two registry reads. Nothing to
+            # publish; carry on to the tag/release check.
+            echo "npm reports ${NAME}@${VERSION} as already published; continuing."
+          else
+            # The first attempt printed only the client-side message. Repeat it
+            # with verbose logging: that is the only way to see the registry's
+            # token-exchange rejection, which npm otherwise reduces to
+            # `ENEEDAUTH`.
             echo "::group::npm publish --loglevel=verbose (diagnostics)"
             npm publish "./${TARBALL}" --access public --tag "$NPM_TAG" --loglevel=verbose || true
             echo "::endgroup::"
@@ -260,10 +324,10 @@ jobs:
           # A publish is accepted before it is servable: npm answers
           # "+ ${NAME}@${VERSION}" and then the version sits at "Validating" on
           # the package page. 0.7.1 needed about ten minutes before
-          # /<name>/<version> answered 200, so wait it out (the helper budgets
-          # REGISTRY_TIMEOUT_SECONDS, default 1800) instead of failing a release
-          # whose tarball the registry already accepted.
-          if node scripts/registry-published.mjs "${NAME}" "${VERSION}"; then
+          # /<name>/<version> answered 200, so wait it out (REGISTRY_TIMEOUT_SECONDS,
+          # default 1800) instead of failing a release whose tarball the registry
+          # already accepted.
+          if wait_for_registry "${NAME}" "${VERSION}"; then
             exit 0
           fi
           echo "::error::npm accepted ${NAME}@${VERSION} but the registry still does not serve it."
