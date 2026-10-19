@@ -233,7 +233,7 @@ async function primeSession(authUrl, statePath) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.help) {
-    console.log('Usage: node scripts/e2e-dsh.mjs [--version 0.1.0-rc.6|latest] [--plugin ds-hentai@0.7.0] [--port 43180] [--url http://127.0.0.1:3080] [--headed]')
+    console.log('Usage: node scripts/e2e-dsh.mjs [--version 0.1.0-rc.6|latest] [--plugin ds-hentai@0.7.1] [--port 43180] [--url http://127.0.0.1:3080] [--headed]')
     console.log('Env: DSH_E2E_NPM_CACHE=<dir> for a throwaway npm cache; DSH_E2E_KEEP_HOME=1 to keep the temp home.')
     process.exit(0)
   }

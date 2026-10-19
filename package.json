@@ -1,6 +1,6 @@
 {
   "name": "ds-hentai",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "ExHentai.org-inspired dark gallery skin for the DeepSeek Harness Web GUI: gallery chrome, optional native sidebar, mutually exclusive skin/native composer, per-option [...] panels, and reversible settings.",
   "license": "MIT",
   "author": "ds-hentai contributors",
@@ -57,7 +57,7 @@
     "test:compat:all": "node scripts/compat-matrix.mjs --write",
     "test:e2e": "node scripts/e2e-dsh.mjs",
     "test:e2e:latest": "node scripts/e2e-dsh.mjs --version latest",
-    "test:e2e:npm": "node scripts/e2e-dsh.mjs --version latest --plugin ds-hentai@0.7.0",
+    "test:e2e:npm": "node scripts/e2e-dsh.mjs --version latest --plugin ds-hentai@0.7.1",
     "pack:check": "npm pack --dry-run"
   },
   "devDependencies": {

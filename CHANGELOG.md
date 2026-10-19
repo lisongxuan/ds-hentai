@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.1
 
 - **DSH 0.2.x settings entry.** `0.2.x` moved Settings from a standalone
   `_trigger` into the account menu, and the menu is portalled outside `#root`.
