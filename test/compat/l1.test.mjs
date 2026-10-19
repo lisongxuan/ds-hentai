@@ -124,6 +124,42 @@ test('no-sessions keeps chrome registration and listSessions returns an array', 
   })
 })
 
+test('listSessions reads the current session from main-view retention', async () => {
+  await withFace('full-rc6', (session) => {
+    const overlay = session.harness.slot('shell.overlay')
+    const legacy = overlay.hooks.native.listSessions()
+    assert.equal(legacy.find((item) => item.id === 's1')?.selected, true)
+
+    session.harness.sessions.list.getSnapshot = () => ({
+      ids: ['s-old', 's-main'],
+      byId: {
+        's-old': {
+          id: 's-old',
+          displayTitle: 'Old session',
+          running: false,
+          blank: false,
+          updatedAt: 1,
+          retainedBy: {}
+        },
+        's-main': {
+          id: 's-main',
+          displayTitle: 'Current session',
+          running: false,
+          blank: false,
+          updatedAt: 2,
+          retainedBy: { mainView: 1 }
+        }
+      },
+      phase: 'ready',
+      projectionsBySession: {}
+    })
+
+    const rows = overlay.hooks.native.listSessions()
+    assert.equal(rows.find((item) => item.id === 's-main')?.selected, true)
+    assert.equal(rows.find((item) => item.id === 's-old')?.selected, false)
+  })
+})
+
 test('disposing the fiber removes stylesheet and markers', async () => {
   const session = await bootPlugin(faceById(catalog, 'full-rc6'), bundle)
   assert.ok(session.document.querySelector(sel('style')))

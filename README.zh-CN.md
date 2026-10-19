@@ -91,7 +91,7 @@ npm pack --dry-run # 发布视图关门
 
 ## 说明
 
-纯浏览器端插件，不改 DSH 文件。会话、回复和设置仍走 DeepSeek Harness；皮肤只换壳。偏好存在本机浏览器里。安装下限是 DSH `0.0.1-rc.5`（第一个带 `shell.overlay` 的版本）；之后的 harness（含当前 `0.1.x-rc`）都放行。测试钉住 `0.1.0-rc.6`，目前验证到的最新版本是 `0.1.7-rc.1`。详见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
+纯浏览器端插件，不改 DSH 文件。会话、回复和设置仍走 DeepSeek Harness；皮肤只换壳。偏好存在本机浏览器里。安装下限是 DSH `0.0.1-rc.5`（第一个带 `shell.overlay` 的版本）；之后的 harness（含当前 `0.2.x-rc`）都放行。测试钉住 `0.1.0-rc.6`，目前验证到的最新版本是 `0.2.1-rc.2`（L1/L2 矩阵，加上一次真实安装的 L3 冒烟）。详见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
 
 ## License
 

@@ -93,7 +93,7 @@ The static demo reuses `src/client.js` and `src/skin.css`. `demo-src/` is only a
 
 ## Notes
 
-Browser-only plugin; it does not edit DSH files. Sessions, replies, and settings still belong to DeepSeek Harness — this skin only replaces the chrome. Preferences stay in the local browser. Install floor is DSH `0.0.1-rc.5` (first `shell.overlay` host); later harness versions including current `0.1.x-rc` builds are allowed. Tested pin is `0.1.0-rc.6`; the newest version verified is `0.1.7-rc.1`. See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+Browser-only plugin; it does not edit DSH files. Sessions, replies, and settings still belong to DeepSeek Harness — this skin only replaces the chrome. Preferences stay in the local browser. Install floor is DSH `0.0.1-rc.5` (first `shell.overlay` host); later harness versions including current `0.2.x-rc` builds are allowed. Tested pin is `0.1.0-rc.6`; the newest version verified is `0.2.1-rc.2` (L1/L2 matrix plus an L3 install and smoke run). See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
 ## License
 

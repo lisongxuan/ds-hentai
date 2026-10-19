@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+- **DSH 0.2.x settings entry.** `0.2.x` moved Settings from a standalone
+  `_trigger` into the account menu, and the menu is portalled outside `#root`.
+  **Open Host Settings** now opens the account-menu row (label text may run into
+  the shortcut, e.g. `设置Ctrl+Alt+,`), so the native General row and recovery
+  switch stay reachable while the skin is on.
+- **Current session from main-view retention.** DSH from `0.1.6-alpha.2` no
+  longer carries `SessionListState.current`; selection is expressed by the row
+  whose `retainedBy.mainView` is set. Session lists and the current id now fall
+  back to that field, so the gallery highlights the open session on `0.1.6`+ /
+  `0.2.x`. The demo host emits the same snapshot shape, and L1 covers it.
+- **0.2.x L3 hardening.** The Playwright smoke dismisses the first-run
+  `Preview Notice` / `Get started` dialogs before asserting the chrome, and a
+  new test walks **Open Host Settings** to the native General row.
+- **Windows probe fix.** `scripts/compat-lib.mjs` extracts package tarballs with
+  relative paths, so Git Bash/MSYS `tar` no longer reads the `D:` drive as a
+  remote host.
+- **Verified through `0.2.1-rc.2`.** `npm run test:compat:all` scanned all 36
+  published `@deepseek-ai/dsh` versions (L1/L2 green; 0.2.x gallery with 7/7
+  CSS adapters) and regenerated `docs/COMPATIBILITY.md`. L3 on `0.2.1-rc.2`
+  passes 3/3; README and catalog metadata were updated.
+
 ## 0.7.0
 
 - **Right sidebar.** The skin covers the sidebar DSH added after `0.1.0-rc.6` —

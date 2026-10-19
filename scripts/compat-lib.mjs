@@ -115,10 +115,10 @@ export async function packExtract(name, version, parent) {
   }
   const files = (await readdir(dest)).filter((item) => item.endsWith('.tgz'))
   if (!files.length) throw new Error(`npm pack produced no tarball for ${spec}`)
-  const tgz = join(dest, files[0])
   const out = join(dest, 'extracted')
   await mkdir(out, { recursive: true })
-  const extracted = await run('tar', ['-xf', tgz, '-C', out])
+  // Relative paths keep MSYS tar from reading "D:" in a Windows path as a remote host.
+  const extracted = await run('tar', ['-xf', files[0], '-C', 'extracted'], { cwd: dest })
   if (extracted.code !== 0) {
     throw new Error(`tar extract failed for ${spec}: ${extracted.stderr || extracted.stdout}`)
   }

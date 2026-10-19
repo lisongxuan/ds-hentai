@@ -839,6 +839,25 @@ function readSessionModel(item) {
   if (typeof raw === 'string') return raw;
   return String(raw.model || raw.name || raw.id || '');
 }
+// DSH >= 0.1.6-alpha.2 dropped SessionListState.current: the selection is
+// carried by the session row whose main view retains it.
+function mainViewRetained(item) {
+  return Boolean(item && item.retainedBy && Number(item.retainedBy.mainView) > 0);
+}
+function retainedSessionId(snap) {
+  if (!snap || typeof snap !== 'object') return null;
+  const byId = snap.byId && typeof snap.byId === 'object' ? snap.byId : null;
+  if (byId) {
+    const hit = Object.keys(byId).find((id) => mainViewRetained(byId[id]));
+    return hit === undefined ? null : String(hit);
+  }
+  const list = Array.isArray(snap) ? snap : (snap.sessions || snap.items || snap.list || snap.rows);
+  if (!Array.isArray(list)) return null;
+  const hit = list.find(mainViewRetained);
+  if (!hit) return null;
+  const id = hit.id || hit.sessionId || hit.key;
+  return id === undefined || id === null ? null : String(id);
+}
 function normalizeSession(item, index) {
   if (!item) return null;
   if (typeof item === 'string') return { id: item, title: item, posted: null, selected: false, tags: [], workspace: '', model: '' };
@@ -855,7 +874,7 @@ function normalizeSession(item, index) {
     tags: nativeTagValues(item),
     projectionValues: item.projectionValues || null,
     pages: item.messageCount || item.pages || null,
-    selected: item.selected === true || item.current === true,
+    selected: item.selected === true || item.current === true || mainViewRetained(item),
     node: null
   };
 }
@@ -877,7 +896,7 @@ function pickSessions(snap) {
     const ids = Array.isArray(snap.ids) ? snap.ids
       : Array.isArray(snap.order) ? snap.order
       : Object.keys(snap.byId);
-    const current = snap.current || snap.currentId || snap.selectedId;
+    const current = snap.current || snap.currentId || snap.selectedId || retainedSessionId(snap);
     return ids.map((id, index) => {
       const item = snap.byId[id];
       if (!item) return null;
@@ -885,15 +904,24 @@ function pickSessions(snap) {
     }).filter(Boolean);
   }
   const list = snap.sessions || snap.items || snap.list || snap.rows;
-  if (Array.isArray(list)) return list.map(normalizeSession).filter(Boolean);
+  if (Array.isArray(list)) {
+    const rows = list.map(normalizeSession).filter(Boolean);
+    const current = snap.current || snap.currentId || snap.selectedId || snap.activeId || snap.sessionId
+      || retainedSessionId(snap);
+    return current
+      ? rows.map((row) => Object.assign({}, row, { selected: String(row.id) === String(current) }))
+      : rows;
+  }
   return [];
 }
 function currentIdFrom(snap, sessions) {
   if (snap && typeof snap === 'object' && !Array.isArray(snap)) {
-    const id = snap.currentId || snap.selectedId || snap.activeId || snap.sessionId;
+    const id = snap.currentId || snap.selectedId || snap.activeId || snap.sessionId || snap.current;
     if (id) return String(id);
   }
-  const selected = sessions.find((item) => item.selected);
+  const retained = retainedSessionId(snap);
+  if (retained) return retained;
+  const selected = sessions.find((item) => item.selected || mainViewRetained(item));
   return selected ? selected.id : null;
 }
 
@@ -984,6 +1012,26 @@ function createNativeBridge(ctx) {
     });
     if (trigger) {
       if (trigger.getAttribute('aria-expanded') !== 'true') trigger.click();
+      return true;
+    }
+    // 0.2.x moved Settings into the account menu and hides the native sidebar
+    // behind the overlay, so open that menu and pick the entry once it renders.
+    const account = nativeNodes('button, [role="button"]').find((node) =>
+      /_trigger/.test(String(node.className || '')) && /account|账号|账户|profile|user/.test(nodeName(node))
+    );
+    if (account) {
+      if (account.getAttribute('aria-expanded') !== 'true') account.click();
+      let tries = 0;
+      const timer = window.setInterval(() => {
+        tries += 1;
+        // The menu is portalled to <body>, outside the #root nativeNodes reads,
+        // and its rows concatenate the label with the shortcut text.
+        const item = Array.prototype.slice.call(document.querySelectorAll('[role="menuitem"]'))
+          .filter((node) => !node.closest('.dsh-ex-chrome, [data-dsh-ex-chrome]'))
+          .find((node) => /^(settings|设置|偏好设置)/.test(nodeName(node)) || /^(settings|设置|偏好设置)/.test(nodeText(node)));
+        if (item) { item.click(); window.clearInterval(timer); return; }
+        if (tries > 30) window.clearInterval(timer);
+      }, 50);
       return true;
     }
     try {
