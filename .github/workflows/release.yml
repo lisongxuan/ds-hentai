@@ -160,7 +160,7 @@ jobs:
           VERSION: ${{ steps.meta.outputs.version }}
         run: |
           set -euo pipefail
-          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+          if node scripts/registry-published.mjs "${NAME}" "${VERSION}" --once; then
             echo "${NAME}@${VERSION} is already on npm; only the GitHub Release remains."
             exit 0
           fi
@@ -241,7 +241,10 @@ jobs:
           TARBALL: ${{ steps.pack.outputs.tarball }}
         run: |
           set -euo pipefail
-          if npm view "${NAME}@${VERSION}" version >/dev/null 2>&1; then
+          # `npm view` answers from the run's cache and the registry serves a
+          # version only after it finishes validating the upload, so both the
+          # skip check and the wait below read the registry directly.
+          if node scripts/registry-published.mjs "${NAME}" "${VERSION}" --once; then
             echo "npm already has ${NAME}@${VERSION}; skipping publish (re-run after a GitHub Release failure)"
           elif ! npm publish "./${TARBALL}" --access public --tag "$NPM_TAG"; then
             # The first attempt is quiet so a successful publish stays readable.
@@ -254,18 +257,19 @@ jobs:
             echo "::error::npm publish failed for ${NAME}@${VERSION}; see the verbose output above."
             exit 1
           fi
-          # Never let a silent auth failure reach the Release step as a
-          # publication that nobody noticed did not happen.
-          for attempt in 1 2 3; do
-            live="$(npm view "${NAME}@${VERSION}" version 2>/dev/null || true)"
-            if [ "$live" = "$VERSION" ]; then
-              echo "${NAME}@${VERSION} is live on the registry."
-              exit 0
-            fi
-            echo "Waiting for ${NAME}@${VERSION} to appear (attempt ${attempt}/3)..."
-            sleep 5
-          done
-          echo "::error::${NAME}@${VERSION} is not readable from the registry after publishing."
+          # A publish is accepted before it is servable: npm answers
+          # "+ ${NAME}@${VERSION}" and then the version sits at "Validating" on
+          # the package page. 0.7.1 needed about ten minutes before
+          # /<name>/<version> answered 200, so wait it out (the helper budgets
+          # REGISTRY_TIMEOUT_SECONDS, default 1800) instead of failing a release
+          # whose tarball the registry already accepted.
+          if node scripts/registry-published.mjs "${NAME}" "${VERSION}"; then
+            exit 0
+          fi
+          echo "::error::npm accepted ${NAME}@${VERSION} but the registry still does not serve it."
+          echo "Check the version's status on https://www.npmjs.com/package/${NAME}?activeTab=versions"
+          echo "If it still reads 'Validating', wait for it to turn 'Valid', then re-run this"
+          echo "workflow with the same tag: the publish is skipped and only the Release is created."
           exit 1
 
       - name: Extract CHANGELOG notes for this version

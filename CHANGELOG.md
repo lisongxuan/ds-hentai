@@ -32,6 +32,13 @@
   echoed. A failed publish is re-run once with `--loglevel=verbose`. The
   probe is skipped when the version is already on npm, so a Release-only retry
   still needs no trusted publisher.
+- **Release waits for npm validation.** The post-publish check gave a new
+  version three 5-second tries; `0.7.1` was accepted by the registry
+  (`+ ds-hentai@0.7.1`, provenance logged to sigstore) yet sat at **Validating**
+  for about ten minutes, so a healthy publish was reported as a failure.
+  `scripts/registry-published.mjs` now asks `/<name>/<version>` directly (no
+  npm cache, cache-busted) with a 30-minute budget, and the workflow states
+  exactly what to do if a version still is not servable at the end.
 - **Windows probe fix.** `scripts/compat-lib.mjs` extracts package tarballs with
   relative paths, so Git Bash/MSYS `tar` no longer reads the `D:` drive as a
   remote host.

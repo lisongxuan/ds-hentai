@@ -84,6 +84,7 @@ npm pack --dry-run # 发布视图关门
 - `scripts/build-client.mjs` —— 组装 `window.__ModuleLoader__.load(...)` 信封到 `lib/client.js`
 - `scripts/build-demo.mjs` —— 把插件 bundle 嵌进 `demo/`
 - `scripts/capture-preview.mjs` —— 从本地 demo 截 Front Page / 对话页 / 右侧边栏 / 设置到 `docs/preview*.png`
+- `scripts/registry-published.mjs` —— 发布门禁：等新版本在 registry 上真的可读（`npm view` 加短重试不够）
 - `screenshots.json` —— 插件市场截图顺序（路径相对本文件）
 - `docs/ARCHITECTURE.md` —— 运行时数据流与边界
 - `docs/COMPATIBILITY.md` —— 基线、分层稳定性、恢复方式
