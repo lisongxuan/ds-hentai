@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.7.2
+
+- **DSH Desktop 0.2.x title bar.** `0.2.x` replaced the old
+  `.dshNativeFrame` / `.dshDesktop*CaptionRow` markup with
+  `html[data-windows-titlebar]` plus an inline `--dsh-windows-titlebar-height`
+  on Windows, and `html[data-platform="darwin"]` drag rows on macOS. Neither
+  old detector matched: the chrome started at `top: 0` over the 40px caption,
+  the nav bar's blanket `-webkit-app-region: no-drag` subtracted the drag band,
+  and body `padding-top` pushed the caption out from under the native window
+  controls. The plugin now recognizes both generations, insets the chrome by
+  the published caption height, keeps the page body at `0`, reserves the nav
+  band in the app columns (including the sidebar strip), and makes the macOS
+  top bar itself draggable.
+- **L3 unblocked: pnpm and Node 24.** `dsh plugin` is a pnpm forwarder, so the
+  smoke now bootstraps a Corepack pnpm shim when PATH has none, and the nightly
+  workflow installs pnpm explicitly. The pin moves to `0.2.2-rc.1`, which
+  requires Node >= 24.9, so the job runs Node 24.
+- **Message bubble hook.** DSH 0.2.2 moved the user bubble to `ui-primitives`
+  and marks it with `data-message-bubble`; the skin accepts that attribute
+  alongside the hashed `_bubble` class, and the L2 catalog allows either
+  pattern.
+- **Generated file modes.** `build:client` / `build:demo` normalize the mode
+  of the files they write, so ACL/FUSE shares (fnOS) do not leave a generated
+  bundle unreadable for other users.
+- **Verified through `0.2.2-rc.1`.** L1 passes 20/20, L2 (pin + `latest`)
+  passes with no failures, and L3 passes 3/3 against a real install.
+
 ## 0.7.1
 
 - **DSH 0.2.x settings entry.** `0.2.x` moved Settings from a standalone

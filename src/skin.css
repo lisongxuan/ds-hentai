@@ -146,6 +146,13 @@ html[data-dsh-exhentai-installed="true"]:has(.dshDesktopMacCaptionRow),
 html[data-dsh-desktop-platform="darwin"]:has(body[data-dsh-desktop-mode="advanced"]) {
   --ex-desktop-inset: max(20px, env(titlebar-area-height, 0px));
 }
+/* DSH Desktop >= 0.2.0. Windows marks the root with data-windows-titlebar and
+   publishes the caption height inline; 40px is the Electron shell default and
+   the JS measurement overrides it. macOS is hiddenInset: no caption band, the
+   marked chrome rows are the drag surface. */
+html[data-dsh-exhentai-installed="true"][data-windows-titlebar] {
+  --ex-desktop-inset: 40px;
+}
 
 /* Overlay chrome reserves a thin nav/footer band; native frame stays interactive. */
 body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) {
@@ -154,12 +161,26 @@ body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) {
   box-sizing: border-box;
 }
 /* Desktop already offsets in-flow columns for its caption. Extra body padding
-   shoved the overlay down (nav too low) and clipped the native sidebar. */
-html[data-dsh-desktop="true"] body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) {
+   shoved the overlay down (nav too low) and clipped the native sidebar. On
+   DSH Desktop >= 0.2.0 the body must stay at 0 too: padding there moves the
+   Windows caption row down while the native window controls stay at the window
+   top, which reads as a squeezed title bar and leaves the drag band misaligned.
+   The nav band is reserved inside the columns instead. */
+html[data-dsh-desktop="true"] body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome),
+html[data-windows-titlebar] body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome),
+html[data-platform="darwin"] body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) {
   padding-top: 0;
 }
-html[data-dsh-desktop="true"] body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) [class*="_centerCol"],
-html[data-dsh-desktop="true"] body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) [class*="_detailsCol"] {
+html:is([data-dsh-desktop="true"], [data-windows-titlebar], [data-platform="darwin"]) body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) [class*="_centerCol"],
+html:is([data-dsh-desktop="true"], [data-windows-titlebar], [data-platform="darwin"]) body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) [class*="_detailsCol"] {
+  padding-top: var(--ex-chrome-nav);
+  box-sizing: border-box;
+}
+/* The 0.2.x shell puts the sidebar collapse toggle in a 52px top strip that is
+   in normal flow at the top of the column. Shift the column by the nav band so
+   the strip stays visible and clickable below the skin's chrome instead of
+   sitting under an opaque, pointer-events:auto bar. */
+html:is([data-windows-titlebar], [data-platform="darwin"]) body[data-dsh-exhentai-active="true"]:has(.dsh-ex-chrome) [class*="_sidebarCol"] {
   padding-top: var(--ex-chrome-nav);
   box-sizing: border-box;
 }
@@ -291,7 +312,7 @@ body[data-dsh-exhentai-active="true"] [class$="_header"]:has([class$="_titleRow"
 }
 
 /* ==== Conversation: comment / page cards inside a gallery box ==== */
-body[data-dsh-exhentai-active="true"] [class$="_bubble"] {
+body[data-dsh-exhentai-active="true"] :is([class$="_bubble"], [data-message-bubble]) {
   width: 95%;
   margin: 10px auto;
   border: 1px solid var(--ex-bg-panel);
@@ -302,7 +323,8 @@ body[data-dsh-exhentai-active="true"] [class$="_bubble"] {
   font-size: 9pt;
 }
 body[data-dsh-exhentai-active="true"] [class*="_user"][class$="_bubble"],
-body[data-dsh-exhentai-active="true"] [class$="_bubble"][class*="_user"] {
+body[data-dsh-exhentai-active="true"] [class$="_bubble"][class*="_user"],
+body[data-dsh-exhentai-active="true"] [data-message-bubble] {
   background: var(--ex-bg-base);
   border-color: var(--ex-bg-panel);
 }
@@ -804,9 +826,14 @@ html[data-dsh-desktop-platform="darwin"][data-dsh-exhentai-window="advanced"] .d
   -webkit-app-region: no-drag;
 }
 
+/* The top nav is the skin's visible title bar. It used to declare no-drag on
+   the whole strip, which subtracted the first 28px of every Desktop drag row
+   under it — on macOS that is the sidebar top strip, so the window kept only a
+   few draggable pixels. Never blanket no-drag it: its controls already opt out
+   through the .dsh-ex-chrome button/a rule, and on macOS the blank runs of the
+   bar itself become the drag surface. */
 .dsh-ex-nb {
   pointer-events: auto;
-  -webkit-app-region: no-drag;
   position: absolute;
   top: 0;
   left: 0;
@@ -829,6 +856,12 @@ html[data-dsh-desktop-platform="darwin"][data-dsh-exhentai-window="advanced"] .d
   overflow: hidden;
   background: var(--ex-bg-base, #34353b);
   z-index: 3;
+}
+/* macOS Desktop only: `data-platform=darwin` is published by the Electron
+   preload, never by a browser. No caption row exists there, so the skin's top
+   bar carries the window drag; its controls stay no-drag via the rule above. */
+html[data-platform="darwin"] .dsh-ex-nb {
+  -webkit-app-region: drag;
 }
 body[data-dsh-exhentai-active="true"] .dsh-ex-nb button {
   background: transparent;
@@ -1396,7 +1429,7 @@ body[data-dsh-exhentai-active="true"] .dsh-ex-action:hover {
   }
 }
 @media (forced-colors: active) {
-  body[data-dsh-exhentai-active="true"] [class$="_bubble"],
+  body[data-dsh-exhentai-active="true"] :is([class$="_bubble"], [data-message-bubble]),
   body[data-dsh-exhentai-active="true"] [class$="_primary"],
   body[data-dsh-exhentai-active="true"] [class$="_header"]:has([class$="_titleRow"]),
   .dsh-ex-ido, .dsh-ex-gm, .dsh-ex-cs {

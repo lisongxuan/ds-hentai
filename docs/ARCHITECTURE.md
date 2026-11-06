@@ -62,11 +62,14 @@ store. `demo-src/` is not in the npm `files` whitelist.
    click the native control. Overlay registration is try/caught so older
    baselines without `shell.overlay` still get tokens + CSS.
 8. Stay in `shell.overlay` (no `document.body` portal). Paint gallery chrome
-   `position: fixed` with `--ex-desktop-inset` (36px framed command bar, or
-   always 32/20px in advanced). Hide native/Desktop sidebar on non-session
-   views. Do not pad `body` on `html[data-dsh-desktop="true"]`. Advanced
-   gets a `.dsh-ex-desktop-drag` strip; never set `-webkit-app-region:
-   no-drag` on the full overlay. Dispose the watcher with the stylesheet fiber.
+   `position: fixed` with `--ex-desktop-inset`: the published Windows caption
+   height (`data-windows-titlebar` + `--dsh-windows-titlebar-height`) on 0.2.x
+   Desktop, the legacy 36px framed command bar, or its 32/20px advanced
+   caption. Keep `body` padding at `0` on Desktop and reserve the nav band
+   inside the app columns. macOS Desktop keeps inset `0` and makes the nav
+   strip the drag surface. Legacy advanced gets a `.dsh-ex-desktop-drag` strip;
+   never set `-webkit-app-region: no-drag` on the full overlay. Dispose the
+   watcher with the stylesheet fiber.
 9. Dispose theme registration, the stylesheet, the overlay, subscribers, and
    state markers with the owning Cordis fiber.
 

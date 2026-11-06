@@ -206,7 +206,7 @@
     }
   ],
   "cssModuleNeedles": [
-    { "id": "_bubble", "layer": "best-effort", "pattern": "_bubble" },
+    { "id": "_bubble", "layer": "best-effort", "patterns": ["_bubble", "data-message-bubble"] },
     { "id": "_sessionRow", "layer": "best-effort", "pattern": "_sessionRow" },
     { "id": "_primary", "layer": "best-effort", "pattern": "_primary" },
     { "id": "_newSession", "layer": "best-effort", "pattern": "_newSession" },

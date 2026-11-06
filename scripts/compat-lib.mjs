@@ -125,13 +125,25 @@ export async function packExtract(name, version, parent) {
   return out
 }
 
+function needlePatterns(needle) {
+  const patterns = Array.isArray(needle.patterns) ? needle.patterns.filter(Boolean) : []
+  return patterns.length ? patterns : [needle.pattern]
+}
+
 function matchNeedles(haystack, needles) {
-  return (needles || []).map((needle) => ({
-    id: needle.id,
-    layer: needle.layer,
-    pattern: needle.pattern,
-    hit: haystack.includes(needle.pattern)
-  }))
+  return (needles || []).map((needle) => {
+    const patterns = needlePatterns(needle)
+    return {
+      id: needle.id,
+      layer: needle.layer,
+      pattern: needle.pattern || patterns.join(' | '),
+      // A needle may list alternatives when a hook moved packages between DSH
+      // versions (e.g. the message bubble gained `data-message-bubble` when it
+      // moved from ui-chat to ui-primitives). Any one of them keeps the adapter
+      // verifiable.
+      hit: patterns.some((pattern) => haystack.includes(pattern))
+    }
+  })
 }
 
 function pkgHasStableNeedles(pkg) {

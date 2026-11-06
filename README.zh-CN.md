@@ -70,7 +70,7 @@ npm run capture    # 截 Front Page / 对话页 / 右侧边栏 / 设置到 docs/
 npm test           # build + check + L1 + demo
 npm run test:compat  # L2：扫描已发布 DSH 包（pin + latest）
 npm run test:compat:all  # 对每个已发布 @deepseek-ai/dsh 版本跑 L1+L2，写入 docs/COMPATIBILITY.md
-npm run test:e2e     # L3：隔离 DSH_HOME + Playwright，对 0.1.0-rc.6
+npm run test:e2e     # L3：隔离 DSH_HOME + Playwright，对 0.2.2-rc.1（需 Node >= 24.9 + pnpm）
 npm pack --dry-run # 发布视图关门
 ```
 
@@ -91,7 +91,7 @@ npm pack --dry-run # 发布视图关门
 
 ## 说明
 
-纯浏览器端插件，不改 DSH 文件。会话、回复和设置仍走 DeepSeek Harness；皮肤只换壳。偏好存在本机浏览器里。安装下限是 DSH `0.0.1-rc.5`（第一个带 `shell.overlay` 的版本）；之后的 harness（含当前 `0.2.x-rc`）都放行。测试钉住 `0.1.0-rc.6`，目前验证到的最新版本是 `0.2.1-rc.2`（L1/L2 矩阵，加上一次真实安装的 L3 冒烟）。详见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
+纯浏览器端插件，不改 DSH 文件。会话、回复和设置仍走 DeepSeek Harness；皮肤只换壳。偏好存在本机浏览器里。安装下限是 DSH `0.0.1-rc.5`（第一个带 `shell.overlay` 的版本）；之后的 harness（含当前 `0.2.x-rc`）都放行。测试钉住 `0.2.2-rc.1`（DSH 0.2.2 把运行时下限提到 Node.js 24.9，且 `dsh plugin` 转发给 pnpm）；L1/L2 矩阵仍覆盖 `0.1.0-rc.6`，L3 会把打包好的 tgz 装进 `0.2.2-rc.1`。详见 [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md)。
 
 ## License
 

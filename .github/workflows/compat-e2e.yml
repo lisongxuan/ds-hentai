@@ -6,9 +6,16 @@
 # install of the target DSH, chromium download, cleanup). This workflow is the
 # scheduled half of that promise.
 #
-# Nightly runs the pinned DSH version (0.1.0-rc.6), matching `npm run test:e2e`
+# Nightly runs the pinned DSH version (0.2.2-rc.1), matching `npm run test:e2e`
 # on a developer machine. Use "Run workflow" with `version` set to `latest` or
 # any published version to probe host drift on demand.
+#
+# Two host requirements come from DSH itself:
+# - `dsh plugin` is a pnpm forwarder, so pnpm must be installed (GitHub images
+#   do not ship it). The script can also bootstrap Corepack shims, but an
+#   explicit install keeps the nightly deterministic.
+# - DSH >= 0.2.2 requires Node >= 24.9, so the job runs Node 24 rather than the
+#   Node 20/22 matrix that only builds the plugin.
 #
 # This is deliberately separate from ci.yml: it is slow and network-heavy, so it
 # never gates a pull request.
@@ -22,7 +29,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'DSH version or dist-tag to test (empty = pinned 0.1.0-rc.6)'
+        description: 'DSH version or dist-tag to test (empty = pinned 0.2.2-rc.1)'
         required: false
         type: string
 
@@ -41,8 +48,10 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
+      - name: Install pnpm for `dsh plugin`
+        run: npm install --global pnpm@10
       - run: npm ci
       - run: npm run build
       - run: npm run check

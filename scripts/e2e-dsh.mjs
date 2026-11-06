@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process'
 import { root } from '../test/compat/catalog.mjs'
 
 function parseArgs(argv) {
-  const out = { version: '0.1.0-rc.6', port: 43180, url: '', headed: false, plugin: '' }
+  const out = { version: '0.2.2-rc.1', port: 43180, url: '', headed: false, plugin: '' }
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
     if (arg === '--version') out.version = argv[++i]
@@ -35,6 +35,69 @@ const stripAnsi = (text) => text.replace(/\u001b\[[0-9;]*[A-Za-z]/g, '')
  */
 function npxPrefix(env) {
   return env.DSH_E2E_NPM_CACHE ? ['--cache', env.DSH_E2E_NPM_CACHE] : []
+}
+
+function pathKey(env) {
+  return Object.keys(env).find((key) => key.toUpperCase() === 'PATH') || 'PATH'
+}
+
+async function commandWorks(command, env) {
+  try {
+    return (await run(command, ['--version'], { env })).code === 0
+  } catch {
+    return false
+  }
+}
+
+/**
+ * `dsh plugin` is a thin pnpm forwarder (`spawnSync('pnpm', …)`), so the target
+ * harness needs a real `pnpm` on PATH — the CLI does not bundle one outside
+ * Desktop. GitHub images do not ship it, and neither does a fresh Node install.
+ * Probe it, and when it is missing materialize Corepack's shims in a throwaway
+ * directory instead of mutating the user's global toolchain.
+ */
+async function ensurePnpm(env, work) {
+  if (await commandWorks(bin('pnpm'), env)) return true
+  if (!(await commandWorks(bin('corepack'), env))) {
+    throw new Error(
+      'dsh plugin add needs pnpm on PATH (or Corepack). Install it with `npm install -g pnpm` ' +
+      'and re-run, or add a pnpm setup step to the CI job.'
+    )
+  }
+  const shimDir = join(work, 'pnpm-bin')
+  await mkdir(shimDir, { recursive: true })
+  // Corepack may otherwise wait for an interactive download confirmation.
+  env.COREPACK_ENABLE_DOWNLOAD_PROMPT = '0'
+  const enabled = await run(bin('corepack'), ['enable', '--install-directory', shimDir, 'pnpm'], { env })
+  if (enabled.code !== 0) {
+    throw new Error(`corepack could not create a pnpm shim:\n${enabled.stderr || enabled.stdout}`)
+  }
+  env[pathKey(env)] = `${shimDir}${process.platform === 'win32' ? ';' : ':'}${env[pathKey(env)] || ''}`
+  if (!(await commandWorks(bin('pnpm'), env))) {
+    throw new Error('pnpm shim was created but `pnpm --version` still fails (Corepack needs registry access)')
+  }
+  console.error(`e2e: created a pnpm shim at ${shimDir}`)
+  return true
+}
+
+/**
+ * DSH >= 0.2.2 raised its minimum runtime to Node 24.9. Failing here with the
+ * routing explanation beats npx installing the CLI and the host dying on its
+ * engine gate with a stack trace.
+ */
+function assertNodeForTarget(version) {
+  const label = String(version)
+  const match = /^(\d+)\.(\d+)\.(\d+)/.exec(label)
+  if (!match && !/^(latest|next)$/.test(label)) return
+  const target = match ? [Number(match[1]), Number(match[2]), Number(match[3])] : [0, 2, 2]
+  const needsNode24 = target[0] > 0 || target[1] > 2 || (target[1] === 2 && target[2] >= 2)
+  if (!needsNode24) return
+  const node = process.versions.node.split('.').map((part) => Number(part))
+  if (node[0] > 24 || (node[0] === 24 && node[1] >= 9)) return
+  throw new Error(
+    `@deepseek-ai/dsh@${version} requires Node.js >= 24.9 (running ${process.versions.node}); ` +
+    'upgrade Node or pass an older --version'
+  )
 }
 
 function spawnCmd(command, args, options) {
@@ -233,7 +296,7 @@ async function primeSession(authUrl, statePath) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.help) {
-    console.log('Usage: node scripts/e2e-dsh.mjs [--version 0.1.0-rc.6|latest] [--plugin ds-hentai@0.7.1] [--port 43180] [--url http://127.0.0.1:3080] [--headed]')
+    console.log('Usage: node scripts/e2e-dsh.mjs [--version 0.2.2-rc.1|latest] [--plugin ds-hentai@0.7.2] [--port 43180] [--url http://127.0.0.1:3080] [--headed]')
     console.log('Env: DSH_E2E_NPM_CACHE=<dir> for a throwaway npm cache; DSH_E2E_KEEP_HOME=1 to keep the temp home.')
     process.exit(0)
   }
@@ -265,11 +328,14 @@ async function main() {
   let child = null
 
   try {
+    assertNodeForTarget(args.version)
+    await ensurePnpm(env, work)
+    const childEnv = { ...env, DSH_HOME: home }
     const spec = args.plugin || await packPlugin(work)
     const dsh = `@deepseek-ai/dsh@${args.version}`
     console.error(`e2e: ${dsh} plugin add ${spec}`)
     const add = await run(bin('npx'), [...npxPrefix(env), '-y', dsh, 'plugin', '--profile', 'web', 'add', spec], {
-      env: { ...process.env, DSH_HOME: home }
+      env: childEnv
     })
     if (add.code !== 0) {
       const allowOffline = process.env.CI !== 'true' && process.env.COMPAT_ALLOW_OFFLINE !== '0'
@@ -294,7 +360,7 @@ async function main() {
 
     let output = ''
     child = spawnCmd(bin('npx'), [...npxPrefix(env), '-y', dsh, 'web', '--no-open', '--host', '127.0.0.1', '--port', String(args.port)], {
-      env: { ...process.env, DSH_HOME: home },
+      env: childEnv,
       log,
       capture: (chunk) => { output += chunk },
       tee: process.env.DSH_E2E_VERBOSE === '1'

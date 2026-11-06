@@ -176,12 +176,18 @@ test('gallery chrome CSS reserves a desktop titlebar inset', async () => {
     assert.match(css, /--ex-desktop-inset/)
     assert.match(css, /dshDesktopWindowsCaptionRow/)
     assert.match(css, /dshDesktopSidebarSurface/)
+    assert.match(css, /data-windows-titlebar/)
+    assert.match(css, /--dsh-windows-titlebar-height|40px/)
+    assert.match(css, /data-platform="darwin"/)
     assert.match(css, /dsh-ex-desktop-drag/)
     assert.match(css, /data-dsh-exhentai-window="advanced"/)
     assert.match(css, /\.dsh-ex-chrome\s*\{[^}]*position:\s*fixed/s)
     assert.match(css, /\.dsh-ex-chrome\s*\{[^}]*top:\s*var\(--ex-desktop-inset/s)
     assert.match(css, /\.dsh-ex-chrome\s*\{[^}]*pointer-events:\s*none\s*!important/s)
     assert.doesNotMatch(css, /\.dsh-ex-chrome\s*\{[^}]*-webkit-app-region:\s*no-drag/s)
+    // The nav strip must not subtract itself from the Desktop drag rows.
+    assert.doesNotMatch(css, /\.dsh-ex-nb\s*\{[^}]*-webkit-app-region:\s*no-drag/s)
+    assert.match(css, /html\[data-platform="darwin"\]\s*\.dsh-ex-nb\s*\{[^}]*-webkit-app-region:\s*drag/s)
     assert.equal(session.document.documentElement.getAttribute('data-dsh-exhentai-desktop'), 'inset-v5')
   })
 })
@@ -206,6 +212,78 @@ test('overlapping Desktop titlebar sets --ex-desktop-inset and clears on dispose
   harness.disposeEffects()
   assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '')
   assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-desktop'), null)
+  assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-window'), null)
+  world.destroy()
+})
+
+test('Windows 0.2.x titlebar marker insets by the published caption height', async () => {
+  const world = createPluginWorld(bundle)
+  world.document.documentElement.setAttribute('data-windows-titlebar', '')
+  world.document.documentElement.style.setProperty('--dsh-windows-titlebar-height', '40px')
+  const slot = world.document.createElement('div')
+  slot.setAttribute('data-shell-overlay', '')
+  slot.getBoundingClientRect = () => ({
+    x: 0, y: 0, top: 0, left: 0, right: 800, bottom: 800, width: 800, height: 800,
+    toJSON() { return {} }
+  })
+  world.document.body.appendChild(slot)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '40px')
+  assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-window'), 'framed')
+  harness.disposeEffects()
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '')
+  assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-window'), null)
+  world.destroy()
+})
+
+test('Windows 0.2.x titlebar without a published height falls back to 40px', async () => {
+  const world = createPluginWorld(bundle)
+  world.document.documentElement.setAttribute('data-windows-titlebar', '')
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '40px')
+  harness.disposeEffects()
+  world.destroy()
+})
+
+test('Windows 0.2.x titlebar does not double-inset an overlay already below it', async () => {
+  const world = createPluginWorld(bundle)
+  world.document.documentElement.setAttribute('data-windows-titlebar', '')
+  world.document.documentElement.style.setProperty('--dsh-windows-titlebar-height', '40px')
+  const root = world.document.createElement('div')
+  root.id = 'root'
+  root.style.transform = 'translateZ(0)'
+  root.getBoundingClientRect = () => ({
+    x: 0, y: 40, top: 40, left: 0, right: 800, bottom: 800, width: 800, height: 760,
+    toJSON() { return {} }
+  })
+  const slot = world.document.createElement('div')
+  slot.setAttribute('data-shell-overlay', '')
+  slot.getBoundingClientRect = root.getBoundingClientRect
+  root.appendChild(slot)
+  world.document.body.appendChild(root)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '')
+  harness.disposeEffects()
+  world.destroy()
+})
+
+test('macOS Desktop marker leaves the chrome at the window top', async () => {
+  const world = createPluginWorld(bundle)
+  world.document.documentElement.setAttribute('data-platform', 'darwin')
+  const row = world.document.createElement('div')
+  row.setAttribute('data-window-drag', '')
+  world.document.body.appendChild(row)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win)
+  world.plugin.apply(harness.ctx)
+  assert.equal(world.document.documentElement.style.getPropertyValue('--ex-desktop-inset'), '')
+  assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-window'), 'macos')
+  harness.disposeEffects()
   assert.equal(world.document.documentElement.getAttribute('data-dsh-exhentai-window'), null)
   world.destroy()
 })

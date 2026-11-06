@@ -1,4 +1,4 @@
-import { mkdir, copyFile, readFile, writeFile, unlink } from 'node:fs/promises'
+import { mkdir, copyFile, chmod, readFile, writeFile, unlink } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawn } from 'node:child_process'
@@ -41,10 +41,23 @@ const boot = await readFile(resolve(outDir, 'boot.js'), 'utf8')
 const client = await readFile(resolve(root, 'lib/client.js'), 'utf8')
 const app = `${boot}\n;\n${client}\n`
 await writeFile(resolve(outDir, 'app.js'), app, 'utf8')
+await chmod(resolve(outDir, 'app.js'), 0o644).catch(() => {})
 await unlink(resolve(outDir, 'boot.js')).catch(() => {})
 
-await copyFile(resolve(root, 'demo-src/index.html'), resolve(outDir, 'index.html'))
-await copyFile(resolve(root, 'demo-src/skin-host.css'), resolve(outDir, 'host.css'))
+/**
+ * `copyFile` preserves the source mode. On ACL/FUSE shares (fnOS, some NAS
+ * mounts) a source stored as 000 yields an unreadable destination with no ACL
+ * entry even for its owner, which broke `npm test` while the file itself was
+ * fine. Normalize the copy; a plain filesystem just keeps 644.
+ */
+async function copyStatic(source, name) {
+  const destination = resolve(outDir, name)
+  await copyFile(resolve(root, 'demo-src', source), destination)
+  await chmod(destination, 0o644).catch(() => {})
+}
+
+await copyStatic('index.html', 'index.html')
+await copyStatic('skin-host.css', 'host.css')
 
 console.log(JSON.stringify({
   outDir: 'demo',

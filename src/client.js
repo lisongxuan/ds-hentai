@@ -2787,6 +2787,18 @@ const DESKTOP_FRAME_FALLBACK = Object.freeze({
   '.dshDesktopWindowsCaptionRow': 32,
   '.dshDesktopMacCaptionRow': 20
 });
+/*
+ * DSH Desktop 0.2.x dropped the `.dshDesktop*CaptionRow` / `.dshNativeFrame`
+ * markup the older shell used. Windows now marks the root with
+ * `data-windows-titlebar` and publishes the caption height as the inline
+ * `--dsh-windows-titlebar-height` (40px in the Electron shell); the caption
+ * itself is `.frame::before`, a pseudo-element no selector can measure. macOS
+ * keys its drag rows off `html[data-platform="darwin"]` instead. Recognize both
+ * generations so the chrome still starts below the caption.
+ */
+const WINDOWS_TITLEBAR_MARK = 'data-windows-titlebar';
+const WINDOWS_TITLEBAR_HEIGHT_PROP = '--dsh-windows-titlebar-height';
+const WINDOWS_TITLEBAR_FALLBACK = 40;
 const DESKTOP_SLOT_SELECTORS = '[data-shell-overlay], .dshDesktopOverlay';
 
 function readOverlaySlot() {
@@ -2829,10 +2841,29 @@ function readUrlDesktopInset() {
   }
 }
 
+function readCssLength(node, prop) {
+  if (!node) return 0;
+  try {
+    const inline = Number.parseFloat(node.style && node.style.getPropertyValue(prop));
+    if (Number.isFinite(inline) && inline > 0) return inline;
+  } catch {}
+  try {
+    const computed = Number.parseFloat(window.getComputedStyle(node).getPropertyValue(prop));
+    if (Number.isFinite(computed) && computed > 0) return computed;
+  } catch {}
+  return 0;
+}
+
 function readMarkerInset() {
   try {
     const html = document.documentElement;
     const body = document.body;
+    // DSH Desktop >= 0.2.0 on Windows paints the native caption above the page
+    // and pads the frame by this height. The value is set by the preload.
+    if (html && html.hasAttribute(WINDOWS_TITLEBAR_MARK)) {
+      const height = readCssLength(html, WINDOWS_TITLEBAR_HEIGHT_PROP);
+      return clampDesktopInset(height || WINDOWS_TITLEBAR_FALLBACK);
+    }
     const modeNode = document.querySelector('[data-desktop-mode]');
     const platNode = document.querySelector('[data-desktop-platform]');
     const mode = (html && html.dataset.dshDesktopMode)
@@ -2854,9 +2885,14 @@ function readMarkerInset() {
 
 function readDesktopWindowKind() {
   try {
+    const html = document.documentElement;
+    // DSH Desktop >= 0.2.0: Windows keeps its native caption row exposed above
+    // the page; macOS has no caption band to reserve.
+    if (html && html.hasAttribute(WINDOWS_TITLEBAR_MARK)) return 'framed';
+    if (html && String(html.dataset.dshDesktopPlatform || html.dataset.platform || '').toLowerCase() === 'darwin'
+      && (window.dshDesktop !== undefined || document.querySelector('[data-window-drag]'))) return 'macos';
     if (document.querySelector('[data-dsh-desktop-frame="titlebar"], .dshNativeFrame')) return 'framed';
     if (document.querySelector('.dshDesktopWindowsCaptionRow, .dshDesktopMacCaptionRow')) return 'advanced';
-    const html = document.documentElement;
     const body = document.body;
     const modeNode = document.querySelector('[data-dsh-desktop-mode], [data-desktop-mode]');
     const mode = (html && html.dataset.dshDesktopMode)
@@ -2960,9 +2996,18 @@ function watchDesktopInset() {
     overlay.addEventListener('geometrychange', schedule);
   }
   let observer = null;
+  let rootObserver = null;
   if (typeof MutationObserver === 'function') {
     observer = new MutationObserver(schedule);
     observer.observe(document.documentElement, { childList: true, subtree: true });
+    // The Desktop preload publishes the Windows caption marker and its height
+    // on the root; observe those attributes specifically so a late preload
+    // still re-measures without watching every inline style in the page.
+    rootObserver = new MutationObserver(schedule);
+    rootObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: [WINDOWS_TITLEBAR_MARK, 'data-platform']
+    });
   }
   return () => {
     if (raf) cancelAnimationFrame(raf);
@@ -2970,6 +3015,7 @@ function watchDesktopInset() {
       overlay.removeEventListener('geometrychange', schedule);
     }
     if (observer) observer.disconnect();
+    if (rootObserver) rootObserver.disconnect();
     if (document.documentElement) {
       document.documentElement.style.removeProperty(DESKTOP_INSET_PROP);
       document.documentElement.removeAttribute('data-dsh-exhentai-desktop');

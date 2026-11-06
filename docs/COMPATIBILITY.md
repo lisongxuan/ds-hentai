@@ -4,16 +4,18 @@
 
 - DeepSeek Harness from `0.0.1-rc.5` (first `shell.overlay` gallery host)
   onward, with no upper bound. Later 0.1.x / 0.2.x / 1.x installs are
-  allowed; later UI drift is fixed when it shows up. Tested pin remains
-  `0.1.0-rc.6`; latest scanned is `0.2.1-rc.2` (`latest`), which also passed
-  an L3 install and smoke run. `0.0.1-rc.1` / `0.0.1-rc.2`
-  still load as tokens + settings but are outside the install range.
+  allowed; later UI drift is fixed when it shows up. Tested pin is
+  `0.2.2-rc.1` (`latest`); it passed an L3 install and a 3/3 Playwright smoke
+  (the L1/L2 matrix still starts at `0.1.0-rc.6`). DSH 0.2.2 requires
+  Node.js >= 24.9 and its `dsh plugin` forwards to pnpm, so the L3 harness
+  provisions both. `0.0.1-rc.1` / `0.0.1-rc.2` still load as tokens +
+  settings but are outside the install range.
 - The npm `peerDependencies` string is a `||` chain of prerelease branches
   (one `major.minor.patch` tuple each). A single `>=0.0.1-rc.5` does **not**
   match `0.1.0-rc.6` or `0.1.1-rc.2` — node-semver only admits a prerelease
   when some comparator shares that exact tuple and itself carries a
   prerelease tag. Do not “simplify” the peer range back to a lone `>=`.
-- Node.js 20 or 22 for build/installation tooling
+- Node.js 20+ to build/check this plugin; DSH 0.2.2+ itself needs Node.js >= 24.9 at runtime
 - Modern Chromium, Firefox, or WebKit with CSS custom properties
 - `shell.overlay` (ui-layout) for the gallery chrome; without it the plugin
   degrades to tokens + scoped CSS + the General settings row
@@ -64,33 +66,44 @@ document.
 
 ## DSH Desktop title bar
 
-DSH Desktop (compatibility / extended) portals a 36px drag frame
-(`.dshNativeFrame`, `data-dsh-desktop-frame="titlebar"`, z-index 1000) over the
-page. Advanced Windows uses Window Controls Overlay (~32px);
-advanced macOS keeps a 20px caption row.
+Two shell generations exist, and both are recognized.
 
-The plugin does **not** require `desktopWindow`. Gallery chrome stays in
-`shell.overlay` (no `document.body` portal) as `position: fixed` with
-`top: var(--ex-desktop-inset)`.
+DSH Desktop **0.2.x** (current) no longer portals a `.dshNativeFrame`.
+Windows marks the root with `data-windows-titlebar` and publishes the caption
+height as the inline `--dsh-windows-titlebar-height` (40px in the Electron
+shell); the caption itself is `.frame::before`, painted above the page
+content. macOS is `hiddenInset`: there is no caption band, and the
+`html[data-platform="darwin"] [data-window-drag]` rows (sidebar top strip,
+conversation header, …) are the drag surface.
 
-Compatibility / extended have a separate 36px command bar. Inset is `0`
-only when a transform/filter on an overlay ancestor already contains
-`position: fixed` below that bar. A shifted `#root` without that containing
-block still insets 36px — otherwise the overlay covers the command bar.
-Advanced has **no** command bar; the 32px (win32) / 20px (darwin) caption
-**is** the drag region. Overlay stacking would swallow it, so advanced
-always insets that height and paints `.dsh-ex-desktop-drag` in the caption
-band (leaving native window controls alone). `dsh web` never sets
-`data-dsh-exhentai-window`, so that strip is `display: none`.
+The older compatibility / extended shell (36px `.dshNativeFrame` drag frame,
+advanced 32/20px caption rows) is still supported through the previous
+selectors.
 
-On `html[data-dsh-desktop="true"]`, body `padding-top` is not applied (it
-clipped the native sidebar). Overlay pages (Front Page, Settings, …) hide
-both the official `[class*="_sidebarCol"]` and Desktop's
-`dshDesktopSidebar*` / `SidebarSurface` column (the leftover rail on
-extended). The native sidebar only shows on the session surface when the
-Chat/Trajectory option is on. That overlay-page hide is the same in
-`dsh web`; session-with-sidebar and all other browser layout rules are
-unchanged.
+Gallery chrome stays in `shell.overlay` (no `document.body` portal) as
+`position: fixed` with `top: var(--ex-desktop-inset)`:
+
+- **Windows:** the inset is the published caption height. Body `padding-top`
+  stays `0` (padding there moved the caption down while the native window
+  controls stayed at the window top — the "squeezed title bar"), and the 32px
+  nav band is reserved inside `_centerCol` / `_detailsCol` / `_sidebarCol`
+  instead (the sidebar strip keeps its collapse toggle clickable).
+- **macOS:** inset `0`. The skin's top nav bar is the visible title bar, so it
+  is itself a drag surface (`-webkit-app-region: drag` on
+  `html[data-platform="darwin"] .dsh-ex-nb`); its buttons and links opt out
+  through the `.dsh-ex-chrome` no-drag rule. The nav strip never declares a
+  blanket `no-drag`: that used to subtract the first 28px of every drag row
+  beneath it, leaving only a few draggable pixels.
+- Legacy advanced mode still paints `.dsh-ex-desktop-drag` in its caption
+  band; `dsh web` never sets `data-dsh-exhentai-window`, so that strip is
+  `display: none`.
+
+Overlay pages (Front Page, Settings, …) hide both the official
+`[class*="_sidebarCol"]` and Desktop's `dshDesktopSidebar*` / `SidebarSurface`
+column (the leftover rail on extended). The native sidebar only shows on the
+session surface when the Chat/Trajectory option is on. That overlay-page hide
+is the same in `dsh web`; session-with-sidebar and all other browser layout
+rules are unchanged.
 
 The overlay uses `pointer-events: none !important` and must **not** set
 `-webkit-app-region` on `.dsh-ex-chrome`. A live install shows
@@ -106,6 +119,12 @@ effect:
 dsh plugin --profile web remove ds-hentai
 dsh web
 ```
+
+The table below is the last complete `npm run test:compat:all` scan
+(2026-10-19, plugin `0.7.0`). `0.2.2-rc.1` postdates it: the pin/`latest` L2
+run (`npm run test:compat`) reports 7/7 CSS adapters with no warnings, and the
+L3 install + Playwright smoke above passes 3/3. Re-run
+`npm run test:compat:all` to append the newer versions.
 
 <!-- compat-matrix:start -->
 
@@ -171,6 +190,6 @@ best-effort probes warn (or assert a clean degrade) and do not block a PR.
 | L1 | `npm test` (includes `npm run test:l1`) | jsdom + mock Cordis faces: `full-rc6`, `no-overlay`, `no-locale`, `no-sessions`. Theme register, General row, overlay try/catch, markers, dispose. |
 | L2 | `npm run test:compat` | Resolve pin/`latest` from `@deepseek-ai/dsh`, then `npm pack` matching `@deepseek-ai/dsh-client-*` packages. Stable strings must remain; CSS-module suffixes (`_sessionRow`, `_bubble`, …) and `shell.overlay` warn if missing. Offline local runs skip instead of failing; CI does not. |
 | L1+L2 matrix | `npm run test:compat:all` | Every published `@deepseek-ai/dsh` version. Writes the matrix in this file; it never touches `package.json` (the field `dshCompatibility` was removed in `0.7.0`). |
-| L3 | `npm run test:e2e` | Temporary `DSH_HOME`, `npx @deepseek-ai/dsh@<ver> plugin --profile web add ./ds-hentai-*.tgz`, `dsh web --no-open --host 127.0.0.1`, Playwright smoke. Dismisses the 0.2.x preview / onboarding dialogs, then checks chrome, Front Page, and that **Open Host Settings** reaches the native General row. Nightly / `workflow_dispatch` in `.github/workflows/compat-e2e.yml`. |
+| L3 | `npm run test:e2e` | Temporary `DSH_HOME`, `npx @deepseek-ai/dsh@<ver> plugin --profile web add ./ds-hentai-*.tgz`, `dsh web --no-open --host 127.0.0.1`, Playwright smoke. `dsh plugin` is a pnpm forwarder, so the script bootstraps a Corepack pnpm shim when PATH has none (the nightly job installs pnpm explicitly); the pin `0.2.2-rc.1` needs Node >= 24.9. Dismisses the 0.2.x preview / onboarding dialogs, then checks chrome, Front Page, and that **Open Host Settings** reaches the native General row. Nightly / `workflow_dispatch` in `.github/workflows/compat-e2e.yml`. |
 
 L3 binds only to loopback and deletes the temporary home unless `DSH_E2E_KEEP_HOME=1`. It does not need a live LLM. Point at an already running GUI with `--url http://127.0.0.1:3080`.

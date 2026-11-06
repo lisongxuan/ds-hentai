@@ -71,7 +71,7 @@ npm run capture    # screenshot Front Page / session / Settings into docs/previe
 npm test           # build + check + L1 + demo
 npm run test:compat  # L2: probe published DSH packages (pin + latest)
 npm run test:compat:all  # L1 + L2 every published @deepseek-ai/dsh version; writes docs/COMPATIBILITY.md
-npm run test:e2e     # L3: isolated DSH_HOME + Playwright against 0.1.0-rc.6
+npm run test:e2e     # L3: isolated DSH_HOME + Playwright against 0.2.2-rc.1 (needs Node >= 24.9 + pnpm)
 npm pack --dry-run # release-view gate
 ```
 
@@ -93,7 +93,7 @@ The static demo reuses `src/client.js` and `src/skin.css`. `demo-src/` is only a
 
 ## Notes
 
-Browser-only plugin; it does not edit DSH files. Sessions, replies, and settings still belong to DeepSeek Harness — this skin only replaces the chrome. Preferences stay in the local browser. Install floor is DSH `0.0.1-rc.5` (first `shell.overlay` host); later harness versions including current `0.2.x-rc` builds are allowed. Tested pin is `0.1.0-rc.6`; the newest version verified is `0.2.1-rc.2` (L1/L2 matrix plus an L3 install and smoke run). See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
+Browser-only plugin; it does not edit DSH files. Sessions, replies, and settings still belong to DeepSeek Harness — this skin only replaces the chrome. Preferences stay in the local browser. Install floor is DSH `0.0.1-rc.5` (first `shell.overlay` host); later harness versions including current `0.2.x-rc` builds are allowed. Tested pin is `0.2.2-rc.1` (DSH 0.2.2 raised its runtime floor to Node.js 24.9 and `dsh plugin` forwards to pnpm); the L1/L2 matrix still includes `0.1.0-rc.6`, and L3 installs the packed tarball into `0.2.2-rc.1`. See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).
 
 ## License
 
