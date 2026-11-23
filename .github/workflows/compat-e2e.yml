@@ -6,7 +6,7 @@
 # install of the target DSH, chromium download, cleanup). This workflow is the
 # scheduled half of that promise.
 #
-# Nightly runs the pinned DSH version (0.2.2-rc.1), matching `npm run test:e2e`
+# Nightly runs the pinned DSH version (0.2.2-rc.5), matching `npm run test:e2e`
 # on a developer machine. Use "Run workflow" with `version` set to `latest` or
 # any published version to probe host drift on demand.
 #
@@ -29,7 +29,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'DSH version or dist-tag to test (empty = pinned 0.2.2-rc.1)'
+        description: 'DSH version or dist-tag to test (empty = pinned 0.2.2-rc.5)'
         required: false
         type: string
 

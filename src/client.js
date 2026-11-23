@@ -970,25 +970,87 @@ function createNativeBridge(ctx) {
       return { state: 'unknown', label: 'idle' };
     }
   };
-  const selectSession = (session, props) => {
+  // DSH 0.2.x exposes navigation as `ctx.uiWorkspace.openSession(id)` (the same
+  // entry the native sidebar calls); older hosts used a `sessions` service with
+  // select/open. Both are tried before falling back to the native DOM row.
+  // `props.useSessions` is a React hook and must never be called from a click
+  // handler: the previous attempt threw "Invalid hook call" and silently fell
+  // through to a title-text DOM match that misses collapsed workspaces.
+  const sessionIdOf = (session) => {
+    const raw = session && (session.id || session.sessionId || session.key);
+    return raw === undefined || raw === null ? '' : String(raw);
+  };
+  const nativeSessionRow = (id) => {
+    if (!id) return null;
+    const wanted = id.startsWith('session:') ? id : `session:${id}`;
+    const rows = nativeNodes('[data-row-key], [class*="_sessionRow"], [data-session-id]');
+    return rows.find((row) => {
+      const key = row.getAttribute('data-row-key');
+      if (key) return key === wanted || key === id;
+      const hook = row.getAttribute('data-session-id')
+        || (/sessionRow/.test(String(row.className || '')) ? row.getAttribute('data-id') : null);
+      return hook === id;
+    }) || null;
+  };
+  const expandCollapsedWorkspaces = () => {
+    let expanded = false;
+    for (const node of nativeNodes('[data-row-key^="workspace:"]')) {
+      if (node.getAttribute('aria-expanded') === 'false') {
+        node.click();
+        expanded = true;
+      }
+    }
+    return expanded;
+  };
+  // Legacy hosts that predate `data-row-key` only offer title text. Match on the
+  // full normalized row text so a truncated/renamed projection does not silently
+  // pick an unrelated session.
+  const clickRowByTitle = (title) => {
+    const wanted = String(title || '').replace(/\s+/g, ' ').trim();
+    if (!wanted) return false;
+    const hit = nativeNodes('[class*="_sessionRow"]').find((row) =>
+      (row.textContent || '').replace(/\s+/g, ' ').includes(wanted));
+    if (!hit) return false;
+    hit.click();
+    return true;
+  };
+  const selectSession = (session) => {
+    const id = sessionIdOf(session);
+    if (!id) return false;
+    // 0.2.x native navigation entry point.
     try {
-      if (props && typeof props.useSessions === 'function') {
-        const snap = props.useSessions();
-        if (snap && typeof snap.select === 'function') { snap.select(session.id); return true; }
-        if (snap && typeof snap.open === 'function') { snap.open(session.id); return true; }
+      const workspaceNav = serviceOf('uiWorkspace', () => ctx.uiWorkspace);
+      if (workspaceNav && typeof workspaceNav.openSession === 'function') {
+        workspaceNav.openSession(id);
+        return true;
       }
     } catch {}
+    // Older/alternate hosts (and the static demo) expose selection on the
+    // client `sessions` service.
     try {
       const sessions = sessionsOf();
-      if (sessions && typeof sessions.select === 'function') { sessions.select(session.id); return true; }
-      if (sessions && typeof sessions.setCurrent === 'function') { sessions.setCurrent(session.id); return true; }
-      if (sessions && typeof sessions.open === 'function') { sessions.open(session.id); return true; }
+      if (sessions && typeof sessions.select === 'function') { sessions.select(id); return true; }
+      if (sessions && typeof sessions.setCurrent === 'function') { sessions.setCurrent(id); return true; }
+      if (sessions && typeof sessions.open === 'function') { sessions.open(id); return true; }
     } catch {}
-    if (session.node) { session.node.click(); return true; }
-    const rows = nativeNodes('[class*="_sessionRow"]');
-    const hit = rows.find((row) => (row.textContent || '').replace(/\s+/g, ' ').includes(session.title));
-    if (hit) { hit.click(); return true; }
-    return false;
+    if (session && session.node) { session.node.click(); return true; }
+    const row = nativeSessionRow(id);
+    if (row) { row.click(); return true; }
+    // Rows of a collapsed workspace are not mounted at all, and the skin hides
+    // the native sidebar behind the gallery. Expand the workspace tree first,
+    // then wait for the row the host renders asynchronously.
+    if (!expandCollapsedWorkspaces()) return clickRowByTitle(session && session.title) ? true : false;
+    return new Promise((resolve) => {
+      let tries = 0;
+      const tick = () => {
+        tries += 1;
+        const hit = nativeSessionRow(id);
+        if (hit) { hit.click(); resolve(true); return; }
+        if (tries >= 20) { resolve(clickRowByTitle(session && session.title)); return; }
+        window.setTimeout(tick, 40);
+      };
+      window.setTimeout(tick, 40);
+    });
   };
   const startSession = () => {
     if (clickClass('_newSession')) return true;
@@ -2595,9 +2657,28 @@ function ChromeShell(props) {
     || '';
 
   const openSession = (session) => {
-    native.selectSession(session, props);
-    setView('session');
-    setFilter('all');
+    const entered = () => {
+      setView('session');
+      setFilter('all');
+    };
+    try {
+      const result = native.selectSession(session, props);
+      // A failed selection used to switch the overlay to the session surface
+      // anyway, leaving an empty/previous conversation on screen. Stay in the
+      // gallery unless the host actually accepted (or is about to accept) the
+      // navigation.
+      if (result === false) {
+        console.warn('[ds-hentai] open session failed:', session && session.id);
+        return;
+      }
+      if (result && typeof result.then === 'function') {
+        result.then((ok) => { if (ok !== false) entered(); }, () => {});
+        return;
+      }
+      entered();
+    } catch (error) {
+      console.warn('[ds-hentai] open session threw:', error);
+    }
   };
   const onNav = (id) => {
     if (id === 'index') { setView('index'); setFilter('all'); setPage(0); return; }

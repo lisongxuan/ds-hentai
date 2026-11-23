@@ -7,7 +7,7 @@ import { spawn } from 'node:child_process'
 import { root } from '../test/compat/catalog.mjs'
 
 function parseArgs(argv) {
-  const out = { version: '0.2.2-rc.1', port: 43180, url: '', headed: false, plugin: '' }
+  const out = { version: '0.2.2-rc.5', port: 43180, url: '', headed: false, plugin: '' }
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
     if (arg === '--version') out.version = argv[++i]
@@ -296,7 +296,7 @@ async function primeSession(authUrl, statePath) {
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   if (args.help) {
-    console.log('Usage: node scripts/e2e-dsh.mjs [--version 0.2.2-rc.1|latest] [--plugin ds-hentai@0.7.2] [--port 43180] [--url http://127.0.0.1:3080] [--headed]')
+    console.log('Usage: node scripts/e2e-dsh.mjs [--version 0.2.2-rc.5|latest] [--plugin ds-hentai@0.7.3] [--port 43180] [--url http://127.0.0.1:3080] [--headed]')
     console.log('Env: DSH_E2E_NPM_CACHE=<dir> for a throwaway npm cache; DSH_E2E_KEEP_HOME=1 to keep the temp home.')
     process.exit(0)
   }

@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.7.3
+
+- **Gallery rows open their conversation again.** The skin's Front Page rows
+  selected a Session through `createNativeBridge.selectSession`, which called
+  `props.useSessions()` inside the click handler (an invalid Hook call whose
+  error was swallowed), then probed `ctx.sessions.select/setCurrent/open` — none
+  of which exist on DSH 0.2.2 — and finally matched the native sidebar row by
+  title text. Rows of a **collapsed** Workspace are not mounted at all (and the
+  skin hides the native sidebar), so that match silently failed, while
+  `openSession` ignored the `false` return and still switched the overlay to the
+  session surface: the native main view stayed on the previous/blank
+  conversation, which reads as "clicked a conversation, nothing loads". The
+  bridge now uses the host navigation entry `ctx.uiWorkspace.openSession(id)`
+  first, keeps the legacy `sessions` service for older hosts/demo, addresses
+  native rows by `[data-row-key="session:<id>"]` (expanding a collapsed
+  Workspace and polling briefly), and only then falls back to title text. A
+  selection the host cannot accept is reported and no longer switches the
+  overlay, and no Hook is called from the handler.
+- **Regression coverage.** L1 gains four `selectSession` cases (uiWorkspace
+  path, legacy service path, collapsed-Workspace expansion + `data-row-key`
+  click, and the failure return). L3 gains a Playwright test that seeds two
+  blank Sessions through the authenticated host `session/create` RPC, reloads
+  the gallery, clicks a non-selected row, and asserts the main view lands on a
+  `[data-conversation-content][data-conversation-session]` — this is the exact
+  path the old fallback broke silently.
+- **Verified through DSH `0.2.2-rc.5` (`latest`).** L1 passes 24/24 and L2
+  probes `0.2.2-rc.1`…`0.2.2-rc.5` plus `0.2.3-alpha.1/2` with 7/7 CSS
+  adapters and no warnings; a fresh `DSH_HOME` install of the packed tarball
+  on `0.2.2-rc.5` passes the Playwright smoke (including the new gallery-row
+  test). The pin moves to `0.2.2-rc.5` in the e2e harness/workflow, the
+  catalog gains explicit `0.2.2-rc.1`/`0.2.2-rc.5` L2/L3 hosts and
+  `verifiedThrough: 0.2.2-rc.5`, and the compatibility/architecture docs and
+  READMEs follow. The `0.2.3-alpha` line is not the pin: it raises the Node
+  floor to `^24.22.3` and changes client bundle/CSS-module layout.
+
 ## 0.7.2
 
 - **DSH Desktop 0.2.x title bar.** `0.2.x` replaced the old

@@ -38,7 +38,7 @@ function faceLocale() {
   }
 }
 
-export function createMockCtx(face, win) {
+export function createMockCtx(face, win, options = {}) {
   let activeId = 'dark'
   let preference = 'dark'
   const themeHistory = []
@@ -53,6 +53,12 @@ export function createMockCtx(face, win) {
   const connection = face.sessions
     ? { getSnapshot: () => ({ state: 'connected' }) }
     : null
+  // DSH 0.2.x native session navigation entry point. Recording the ids lets L1
+  // assert that a gallery click reaches the host instead of falling back to DOM
+  // row text matching. Pass { uiWorkspace: false } to exercise the DOM fallback.
+  const uiWorkspace = options.uiWorkspace === false
+    ? null
+    : { openCalls: [], openSession(id) { this.openCalls.push(String(id)) } }
 
   const theme = {
     register(spec) {
@@ -79,6 +85,7 @@ export function createMockCtx(face, win) {
     locale,
     sessions,
     workspaces,
+    uiWorkspace,
     connection,
     layout: {
       open() { return true },
@@ -90,6 +97,7 @@ export function createMockCtx(face, win) {
       if (name === 'theme') return theme
       if (name === 'locale') return locale
       if (name === 'sessions') return sessions
+      if (name === 'uiWorkspace') return uiWorkspace
       if (name === 'workspaces') return workspaces
       if (name === 'connection') return connection
       return null
@@ -143,6 +151,7 @@ export function createMockCtx(face, win) {
     slots,
     locale,
     sessions,
+    uiWorkspace,
     slot(name) {
       return slots.find((item) => item.name === name) || null
     },

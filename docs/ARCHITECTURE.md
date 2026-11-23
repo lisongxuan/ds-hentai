@@ -87,6 +87,15 @@ overlay Search control fills the composer and clicks that button (or
 The plugin injects no document-level key logger; the overlay's own inputs only
 listen on their nodes.
 
+Gallery rows name their Session through the native navigation entry:
+`ctx.uiWorkspace.openSession(id)` on 0.2.x (the same entry the native sidebar
+calls). Hosts without that service fall back to the native
+`[data-row-key="session:<id>"]` row — expanding a collapsed Workspace first —
+and only then to title text on mounted rows. A selection the host cannot accept
+is reported instead of switching the overlay to an empty session surface;
+`props.useSessions` is a React hook and is never invoked from the click
+handler.
+
 The two right-pane chips (`Workspace files`, `New terminal`) stay inside that
 boundary: they never call a private API, they click the host's own opener and
 then the matching `[data-sidebar-right-guide-entry]` node, polling briefly

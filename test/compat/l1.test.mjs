@@ -456,3 +456,76 @@ test('advanced still insets when #root is shifted below the caption', async () =
   harness.disposeEffects()
   world.destroy()
 })
+
+test('gallery selection prefers the native uiWorkspace navigation entry', async () => {
+  await withFace('full-rc6', (session) => {
+    const overlay = session.harness.slot('shell.overlay')
+    // A throwing hook must never be called from the click path again: the old
+    // implementation called props.useSessions() in the handler and swallowed
+    // the resulting invalid-hook-call error.
+    const props = { useSessions() { throw new Error('hook called outside render') } }
+    const result = overlay.hooks.native.selectSession({ id: 's1', title: 'Hello session' }, props)
+    assert.equal(result, true)
+    assert.deepEqual(session.harness.uiWorkspace.openCalls, ['s1'])
+  })
+})
+
+test('gallery selection keeps older hosts working through the sessions service', async () => {
+  const world = createPluginWorld(bundle)
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win, { uiWorkspace: false })
+  const selected = []
+  harness.sessions.select = (id) => selected.push(id)
+  world.plugin.apply(harness.ctx)
+  const overlay = harness.slot('shell.overlay')
+  assert.equal(overlay.hooks.native.selectSession({ id: 's1' }), true)
+  assert.deepEqual(selected, ['s1'])
+  harness.disposeEffects()
+  world.destroy()
+})
+
+test('gallery selection expands a collapsed workspace and clicks the data-row-key row', async () => {
+  const world = createPluginWorld(bundle)
+  const root = world.document.createElement('div')
+  root.id = 'root'
+  const workspaceRow = world.document.createElement('div')
+  workspaceRow.setAttribute('data-row-key', 'workspace:w1')
+  workspaceRow.setAttribute('aria-expanded', 'false')
+  const clicks = []
+  workspaceRow.addEventListener('click', () => {
+    workspaceRow.setAttribute('aria-expanded', 'true')
+    const row = world.document.createElement('div')
+    row.className = 'hZ_sessionRow'
+    row.setAttribute('data-row-key', 'session:s1')
+    row.addEventListener('click', () => clicks.push('s1'))
+    root.appendChild(row)
+  })
+  root.appendChild(workspaceRow)
+  world.document.body.appendChild(root)
+
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win, { uiWorkspace: false })
+  delete harness.sessions.select
+  delete harness.sessions.setCurrent
+  delete harness.sessions.open
+  world.plugin.apply(harness.ctx)
+  const overlay = harness.slot('shell.overlay')
+  const pending = overlay.hooks.native.selectSession({ id: 's1', title: 'Hello session' })
+  assert.ok(pending && typeof pending.then === 'function', 'collapsed-workspace fallback is asynchronous')
+  assert.equal(await pending, true)
+  assert.equal(workspaceRow.getAttribute('aria-expanded'), 'true')
+  assert.deepEqual(clicks, ['s1'])
+  harness.disposeEffects()
+  world.destroy()
+})
+
+test('gallery selection reports failure when no native row can be found', async () => {
+  const world = createPluginWorld(bundle)
+  const harness = createMockCtx(faceById(catalog, 'full-rc6'), world.win, { uiWorkspace: false })
+  delete harness.sessions.select
+  delete harness.sessions.setCurrent
+  delete harness.sessions.open
+  world.plugin.apply(harness.ctx)
+  const overlay = harness.slot('shell.overlay')
+  assert.equal(overlay.hooks.native.selectSession({ id: 'missing', title: 'Nowhere' }), false)
+  harness.disposeEffects()
+  world.destroy()
+})
